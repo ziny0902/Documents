@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<!--
+==============================================================================
+           "GitHub HTML5 Pandoc Template" v2.1 — by Tristano Ajmone           
+==============================================================================
+Copyright © Tristano Ajmone, 2017, MIT License (MIT). Project's home:
+
+- https://github.com/tajmone/pandoc-goodies
+
+The CSS in this template reuses source code taken from the following projects:
+
+- GitHub Markdown CSS: Copyright © Sindre Sorhus, MIT License (MIT):
+  https://github.com/sindresorhus/github-markdown-css
+
+- Primer CSS: Copyright © 2016-2017 GitHub Inc., MIT License (MIT):
+  http://primercss.io/
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The MIT License 
+
+Copyright (c) Tristano Ajmone, 2017 (github.com/tajmone/pandoc-goodies)
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+Copyright (c) 2017 GitHub Inc.
+
+"GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017, released
+under the MIT License (MIT); it contains readaptations of substantial portions
+of the following third party softwares:
+
+(1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
+(2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+==============================================================================-->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>M_calculus</title>
+  <style type="text/css">
+@charset "UTF-8";.markdown-body{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;color:#24292e;font-family:-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";font-size:16px;line-height:1.5;word-wrap:break-word;box-sizing:border-box;min-width:200px;max-width:980px;margin:0 auto;padding:45px}.markdown-body a{color:#0366d6;background-color:transparent;text-decoration:none;-webkit-text-decoration-skip:objects}.markdown-body a:active,.markdown-body a:hover{outline-width:0}.markdown-body a:hover{text-decoration:underline}.markdown-body a:not([href]){color:inherit;text-decoration:none}.markdown-body strong{font-weight:600}.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25}.markdown-body h1{font-size:2em;margin:.67em 0;padding-bottom:.3em;border-bottom:1px solid #eaecef}.markdown-body h2{padding-bottom:.3em;font-size:1.5em;border-bottom:1px solid #eaecef}.markdown-body h3{font-size:1.25em}.markdown-body h4{font-size:1em}.markdown-body h5{font-size:.875em}.markdown-body h6{font-size:.85em;color:#6a737d}.markdown-body img{border-style:none}.markdown-body svg:not(:root){overflow:hidden}.markdown-body hr{box-sizing:content-box;height:.25em;margin:24px 0;padding:0;overflow:hidden;background-color:#e1e4e8;border:0}.markdown-body hr::before{display:table;content:""}.markdown-body hr::after{display:table;clear:both;content:""}.markdown-body input{margin:0;overflow:visible;font:inherit;font-family:inherit;font-size:inherit;line-height:inherit}.markdown-body [type=checkbox]{box-sizing:border-box;padding:0}.markdown-body *{box-sizing:border-box}.markdown-body blockquote{margin:0}.markdown-body ol,.markdown-body ul{padding-left:2em}.markdown-body ol ol,.markdown-body ul ol{list-style-type:lower-roman}.markdown-body ol ol,.markdown-body ol ul,.markdown-body ul ol,.markdown-body ul ul{margin-top:0;margin-bottom:0}.markdown-body ol ol ol,.markdown-body ol ul ol,.markdown-body ul ol ol,.markdown-body ul ul ol{list-style-type:lower-alpha}.markdown-body li>p{margin-top:16px}.markdown-body li+li{margin-top:.25em}.markdown-body dd{margin-left:0}.markdown-body dl{padding:0}.markdown-body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:600}.markdown-body dl dd{padding:0 16px;margin-bottom:16px}.markdown-body code{font-family:SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace}.markdown-body pre{font:12px SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;word-wrap:normal}.markdown-body blockquote,.markdown-body dl,.markdown-body ol,.markdown-body p,.markdown-body pre,.markdown-body table,.markdown-body ul{margin-top:0;margin-bottom:16px}.markdown-body blockquote{padding:0 1em;color:#6a737d;border-left:.25em solid #dfe2e5}.markdown-body blockquote>:first-child{margin-top:0}.markdown-body blockquote>:last-child{margin-bottom:0}.markdown-body table{display:block;width:100%;overflow:auto;border-spacing:0;border-collapse:collapse}.markdown-body table th{font-weight:600}.markdown-body table td,.markdown-body table th{padding:6px 13px;border:1px solid #dfe2e5}.markdown-body table tr{background-color:#fff;border-top:1px solid #c6cbd1}.markdown-body table tr:nth-child(2n){background-color:#f6f8fa}.markdown-body img{max-width:100%;box-sizing:content-box;background-color:#fff}.markdown-body code{padding:.2em 0;margin:0;font-size:85%;background-color:rgba(27,31,35,.05);border-radius:3px}.markdown-body code::after,.markdown-body code::before{letter-spacing:-.2em;content:" "}.markdown-body pre>code{padding:0;margin:0;font-size:100%;word-break:normal;white-space:pre;background:0 0;border:0}.markdown-body .highlight{margin-bottom:16px}.markdown-body .highlight pre{margin-bottom:0;word-break:normal}.markdown-body .highlight pre,.markdown-body pre{padding:16px;overflow:auto;font-size:85%;line-height:1.45;background-color:#f6f8fa;border-radius:3px}.markdown-body pre code{display:inline;max-width:auto;padding:0;margin:0;overflow:visible;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}.markdown-body pre code::after,.markdown-body pre code::before{content:normal}.markdown-body .full-commit .btn-outline:not(:disabled):hover{color:#005cc5;border-color:#005cc5}.markdown-body kbd{box-shadow:inset 0 -1px 0 #959da5;display:inline-block;padding:3px 5px;font:11px/10px SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;color:#444d56;vertical-align:middle;background-color:#fcfcfc;border:1px solid #c6cbd1;border-bottom-color:#959da5;border-radius:3px;box-shadow:inset 0 -1px 0 #959da5}.markdown-body :checked+.radio-label{position:relative;z-index:1;border-color:#0366d6}.markdown-body .task-list-item{list-style-type:none}.markdown-body .task-list-item+.task-list-item{margin-top:3px}.markdown-body .task-list-item input{margin:0 .2em .25em -1.6em;vertical-align:middle}.markdown-body::before{display:table;content:""}.markdown-body::after{display:table;clear:both;content:""}.markdown-body>:first-child{margin-top:0!important}.markdown-body>:last-child{margin-bottom:0!important}.Alert,.Error,.Note,.Success,.Warning{padding:11px;margin-bottom:24px;border-style:solid;border-width:1px;border-radius:4px}.Alert p,.Error p,.Note p,.Success p,.Warning p{margin-top:0}.Alert p:last-child,.Error p:last-child,.Note p:last-child,.Success p:last-child,.Warning p:last-child{margin-bottom:0}.Alert{color:#246;background-color:#e2eef9;border-color:#bac6d3}.Warning{color:#4c4a42;background-color:#fff9ea;border-color:#dfd8c2}.Error{color:#911;background-color:#fcdede;border-color:#d2b2b2}.Success{color:#22662c;background-color:#e2f9e5;border-color:#bad3be}.Note{color:#2f363d;background-color:#f6f8fa;border-color:#d5d8da}.Alert h1,.Alert h2,.Alert h3,.Alert h4,.Alert h5,.Alert h6{color:#246;margin-bottom:0}.Warning h1,.Warning h2,.Warning h3,.Warning h4,.Warning h5,.Warning h6{color:#4c4a42;margin-bottom:0}.Error h1,.Error h2,.Error h3,.Error h4,.Error h5,.Error h6{color:#911;margin-bottom:0}.Success h1,.Success h2,.Success h3,.Success h4,.Success h5,.Success h6{color:#22662c;margin-bottom:0}.Note h1,.Note h2,.Note h3,.Note h4,.Note h5,.Note h6{color:#2f363d;margin-bottom:0}.Alert h1:first-child,.Alert h2:first-child,.Alert h3:first-child,.Alert h4:first-child,.Alert h5:first-child,.Alert h6:first-child,.Error h1:first-child,.Error h2:first-child,.Error h3:first-child,.Error h4:first-child,.Error h5:first-child,.Error h6:first-child,.Note h1:first-child,.Note h2:first-child,.Note h3:first-child,.Note h4:first-child,.Note h5:first-child,.Note h6:first-child,.Success h1:first-child,.Success h2:first-child,.Success h3:first-child,.Success h4:first-child,.Success h5:first-child,.Success h6:first-child,.Warning h1:first-child,.Warning h2:first-child,.Warning h3:first-child,.Warning h4:first-child,.Warning h5:first-child,.Warning h6:first-child{margin-top:0}h1.title,p.subtitle{text-align:center}h1.title.followed-by-subtitle{margin-bottom:0}p.subtitle{font-size:1.5em;font-weight:600;line-height:1.25;margin-top:0;margin-bottom:16px;padding-bottom:.3em}div.line-block{white-space:pre-line}
+  </style>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="/home/suse/.local/share/pandoc/templates/src/GitHub.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h2 id="equations-of-planes">equations of planes</h2>
+<figure>
+<img src="img/planes.png" alt="vector equation of the plane" /><figcaption aria-hidden="true">vector equation of the plane</figcaption>
+</figure>
+<ul>
+<li><a href="Multivariable%20Calculus_%20Concepts%20and%20Contexts%20(%20PDFDrive.com%20).pdf#page=10">vector equation of the palne</a> <span class="math display">\[
+\begin{aligned}
+n \cdot (r-r_{0}) = 0\\
+n \cdot r = n \cdot r_{0}
+\end{aligned}
+\]</span></li>
+</ul>
+<p><span class="math display">\[
+n = \langle a, b, c \rangle, \quad r=\langle x, y, z \rangle, 
+r_{0}=\langle x_{0}, y_{0}, z_{0} \rangle
+\]</span> <span class="math display">\[
+\begin{aligned}
+\langle a,b,c, \rangle \cdot \langle x-x_0, y-y_0, z-z_0 \rangle &amp;= 0\\
+a(x-x_0) + b(y-y_0) + c(z - z_0) &amp;= 0
+\end{aligned}
+\]</span></p>
+<p><strong>problem)</strong></p>
+<p>Plane through origin with normal vector <span class="math inline">\(\vec{N} = \langle 1,5,10 \rangle\)</span> ?</p>
+<p>P is in plane</p>
+<p><span class="math display">\[ \Leftrightarrow \overrightarrow{OP} \cdot \vec{N} = 0 \]</span></p>
+<p><span class="math display">\[ \Leftrightarrow x + 5y + 10z = 0 \]</span></p>
+<p><strong>problem)</strong></p>
+<p>plane through <span class="math inline">\(P_0 (2, 1, -1)\)</span> and <span class="math inline">\(\perp \vec{N} = \langle 1, 5,10 \rangle\)</span></p>
+<p>P is in plane</p>
+<p><span class="math display">\[ \Leftrightarrow \overrightarrow{P_{0}P} \cdot \vec {N} = 0 \]</span></p>
+<p><span class="math display">\[\Leftrightarrow \langle x-2, y-1, z+1 \rangle \cdot \langle 1,5,10 \rangle =0 \]</span></p>
+<p><span class="math display">\[\Leftrightarrow (x-2)+5(y-1)+10(z+1) =0\]</span></p>
+<p><span class="math display">\[\Leftrightarrow x+5y+10z=-3 \]</span></p>
+<p>In equation <span class="math inline">\(ax+by+cz=d, \quad \langle a,b,c, \rangle = \text{normal vector} \vec{N}\)</span></p>
+<h2 id="equations-of-lines">equations of lines</h2>
+<ul>
+<li><p>line</p>
+<p>intersection of 2 planes or trajectory of a moving point “parametric equation”</p></li>
+</ul>
+<p><strong>ex)</strong></p>
+<p>line through</p>
+<p><span class="math display">\[ Q_0 = (-1, 2,2 ) \]</span> <span class="math display">\[ Q_1 = (1, 3, -1) \]</span> <span class="math display">\[
+Q(t) = \text{moving point, at } t=0 \text{ it&#39;s at } Q_0 \text{ moves at constant speed on the line}
+\]</span> <span class="math display">\[
+\text {What is the position at time t, } Q(t) \text{?}
+\]</span> <span class="math display">\[
+\overrightarrow{Q_0 Q(t)} = t \overrightarrow{Q_0 Q_1} = t \langle 2,1,-3 \rangle
+\]</span> <span class="math display">\[
+Q(t) = ( x(t), y(t), z(t))
+\]</span></p>
+<p><span class="math display">\[
+x(t) + 1 = 2t \quad
+y(t) -2 =t \quad
+z(t) -2 = -3t
+\]</span></p>
+<p><span class="math display">\[
+\begin{aligned}
+\overrightarrow{Q_0 Q(t)} &amp;= t \overrightarrow{Q_0 Q_1}\\
+x(t) &amp;= -1 + 2t\\
+y(t) &amp;= 2+ t\\
+z(t) &amp;= 2-3t\\
+Q(t) &amp;= Q_0 + t \overrightarrow{Q_0 Q_1}
+\end{aligned}
+\]</span></p>
+<ul>
+<li><p>cycloid</p>
+<p>wheel of radious a rolling on floor(x-axis) p = a point on rim of wheel starts at 0. what happen?</p></li>
+</ul>
+<figure>
+<img src="img/cycloid.png" alt="cycloid" /><figcaption aria-hidden="true">cycloid</figcaption>
+</figure>
+<p>Question: position <span class="math inline">\((x(\theta), y(\theta))\)</span> of the point P? as a function of the angle <span class="math inline">\(\theta\)</span> by which the wheel has rotated</p>
+<p><span class="math display">\[
+\overrightarrow{OP} = \overrightarrow{OA} + \overrightarrow{AB} + \overrightarrow{BP} \qquad
+\overrightarrow{OA}=\langle a\theta, 0\rangle \qquad
+\overrightarrow{OA} = \text{arclength from A to P }
+\]</span></p>
+<p><span class="math display">\[
+\overrightarrow{AB}=\langle 0, a \rangle
+\]</span></p>
+<p><span class="math display">\[
+\overrightarrow{BP} \langle -a \sin{\theta}, -a \cos {theta} \rangle
+\]</span></p>
+<p><span class="math display">\[
+\overrightarrow{OP} = \langle a\theta - a\sin{\theta}, a - a\cos{\theta} \rangle
+\]</span></p>
+<p>Question: what happens near bottom? Answer: take length unit = radius a=1</p>
+<p><span class="math display">\[
+\begin{aligned}
+x(\theta) &amp;= \theta - \sin{\theta}\\
+y(\theta) &amp;= 1 - \cos{\theta}\\
+\sin(\theta) &amp;\sim \theta \text{ for } \theta \text{ small}\\
+\cos(\theta) &amp;\sim 1
+\end{aligned}
+\]</span></p>
+<p>Taylor approximation for t small</p>
+<p><span class="math display">\[
+f(t) \approx f^{&#39;} (0) + tf^{&#39;}(0) + \frac{t^2}{2}f^{&#39;&#39;}(0)+\frac{t^3}{6}f^{&#39;&#39;&#39;}(0)
+\]</span> <span class="math display">\[
+\begin{aligned}
+sin(\theta) &amp;\approx \theta - \frac{\theta}{6} \\
+\cos(\theta) &amp;\approx 1 - \frac{\theta^2}{2}\\
+x(\theta) &amp;\approx \theta - \left (\theta - \frac{\theta}{6} \right ) \approx \frac{\theta^3}{6}\\
+y(\theta) &amp;\approx 1 - \left (1 - \frac{\theta^2}{2} \right ) \approx \frac{\theta^2}{2}
+\end{aligned}
+\]</span></p>
+<p>x 값이 y값의 크기에 비해 훨씬 작다.</p>
+<p><span class="math inline">\(\frac{y}{x} \approx \frac{}{} = \frac {3}{\theta} \rightarrow \infty\)</span> when <span class="math inline">\(\theta \rightarrow 0\)</span> slope at orighin is <span class="math inline">\(\infty\)</span></p>
+<h2 id="parametric-equations">parametric equations</h2>
+<dl>
+<dt>position of a moving point</dt>
+<dd><span class="math display">\[
+F(t)=\langle x(t), y(t), z(t) \rangle
+\]</span>
+</dd>
+</dl>
+<p>ex) cycloid (wheel radius 1, at unit speed)</p>
+<p><span class="math display">\[
+\vec r(t) = \langle t - \sin(t), 1-\cos(t)
+\]</span></p>
+<dl>
+<dt>velocity vector</dt>
+<dd><span class="math display">\[\vec{v}=\frac{d\vec r}{dt}=\langle \frac{dx}{dt}, \frac{dy}{dt}, \frac{dz}{dt} \rangle\]</span>
+</dd>
+</dl>
+<p>ex) for cycloid <span class="math display">\[
+\vec{v} = \langle 1-\cos(t), \sin(t) \rangle
+\]</span> at t=0: <span class="math inline">\(\vec{v}=0\)</span></p>
+<dl>
+<dt>speed (scalar)</dt>
+<dd><span class="math inline">\(|\vec{v}|=\sqrt{(1-\cos(t)^2+\sin^2(t)}=\sqrt{2-2\cos(t)}\)</span>
+</dd>
+<dt>acceleration</dt>
+<dd><span class="math inline">\(\vec{a}=\frac{d\vec{v}}{dt}\)</span>
+</dd>
+</dl>
+<p>ex) cycloid <span class="math inline">\(\vec{a}=\langle \sin(t), \cos(t) \rangle\)</span> at t=0: <span class="math inline">\(\vec{a}=\langle 0, 1 \rangle\)</span></p>
+<p><span class="math display">\[
+|\frac{d\vec{r}}{dt} \ne \frac{d|\vec{r}|}{dt}
+\]</span></p>
+<dl>
+<dt>arc length</dt>
+<dd>s=distance travelled alng trajectory
+</dd>
+</dl>
+<p>s versus t?</p>
+<p><span class="math display">\[
+\frac{ds}{dt} = speed = |\vec{v}|
+\]</span></p>
+<p>ex) length of an arch of cycloid is <span class="math inline">\(\int_{0}^{2\pi}\sqrt{2-2\cos(t)dt}\)</span></p>
+<dl>
+<dt>unit tangent vector</dt>
+<dd>
+</dd>
+</dl>
+<p><span class="math display">\[
+\hat {T} = \frac {\vec{v}}{|\vec{v}|}
+\]</span></p>
+<p><span class="math display">\[
+\vec{v}=\frac{d\vec{r}}{dt}=\frac{d\vec{r}}{ds}\frac{ds}{dt}
+= \hat{T} \frac{ds}{dt}
+\]</span></p>
+<p>velocity has direction(tangent to traj = <span class="math inline">\(\hat{T}\)</span>), lenght(speed = <span class="math inline">\(\frac{ds}{dt}\)</span>)</p>
+<h2 id="partial-derivative">partial derivative</h2>
+<dl>
+<dt>partial derivative of f with respect to x at (a,b)</dt>
+<dd><span class="math display">\[f_{x}(a,b) = g&#39;(a) \quad \text{ where } \quad g(x)-f(x,b)\]</span>
+</dd>
+</dl>
+<p><span class="math display">\[f_{x}(a,b)= \lim_{h\to \infty}\frac{f(a+h,b)-f(a,b)}{h}\]</span></p>
+<dl>
+<dt>partial_derivative of f with respect to y at (a,b)</dt>
+<dd><span class="math display">\[f_{y}(a,b)= \lim_{h\to \infty}\frac{f(a,b+h)-f(a,b)}{h}\]</span>
+</dd>
+</dl>
+<p>If f is a function of two variables, its partial derivatives are the functions <span class="math inline">\(f_{x}\)</span> and <span class="math inline">\(f_{y}\)</span> defined by</p>
+<p><span class="math display">\[f_{x}(x,y)= \lim_{h\to \infty}\frac{f(x+h,y)-f(x,y)}{h}\]</span></p>
+<p><span class="math display">\[f_{y}(x,y)= \lim_{h\to \infty}\frac{f(x,y+h)-f(x,y)}{h}\]</span></p>
+<dl>
+<dt>notiation for partial derivatives</dt>
+<dd>If <span class="math inline">\(z= f(f,y)\)</span>, we write <span class="math display">\[f_{x}(x,y)=f_{x}=\frac{\partial{f}}{\partial{x}}
+=\frac{\partial}{\partial{x}}f(x,y)=\frac{\partial{z}}{\partial{x}}=f_{1}=D_{1}f=D_{x}f \]</span>
+</dd>
+</dl>
+<p><span class="math display">\[f_{y}(x,y)=f_{x}=\frac{\partial{f}}{\partial{y}}
+=\frac{\partial}{\partial{y}}f(x,y)=\frac{\partial{z}}{\partial{y}}=f_{2}=D_{2}f=D_{y}f \]</span></p>
+<h2 id="approximation-formula">Approximation formula</h2>
+<p>If we change <span class="math inline">\(x \rightarrow x+\Delta{x} \quad y \rightarrow y+\Delta{y}\)</span></p>
+<p><span class="math inline">\(z=f(x,y)\)</span> then <span class="math inline">\(\Delta{z} \approx f_{x}\Delta{x} + f_{y}\Delta{y}\)</span></p>
+<dl>
+<dt>Tangent Planes</dt>
+<dd><span class="math inline">\(f_{x} \, f_{x}\)</span> are slopes of 2 tangent lines.
+</dd>
+</dl>
+<p><span class="math display">\[
+\frac {\partial{f}}{\partial{x}}(x_{0}, y_{0}) = a \Rightarrow \quad
+L_{1} = 
+\begin{cases}
+z=z_{0}+a(x-x_{0})\\
+y=y_{0}
+\end{cases}
+\]</span></p>
+<p><span class="math display">\[
+\frac {\partial{f}}{\partial{y}}(x_{0}, y_{0}) = b \Rightarrow \quad
+L_{2} = 
+\begin{cases}
+z=z_{0}+b(y-y_{0})\\
+x=x_{0}
+\end{cases}
+\]</span></p>
+<p><span class="math inline">\(L_{1}\)</span>, <span class="math inline">\(L_{2}\)</span> are both tangent to the graph <span class="math inline">\(z=f(x,y)\)</span></p>
+<p>Together they determine a plane. <span class="math display">\[
+z = z_{0}+a(x - x_{0}) + b(y-y_{0})
+\]</span></p>
+<p>Approximation formula says: graph of f is close to its tangent plane.</p>
+<h2 id="application-of-partial-derivatives">Application of partial derivatives</h2>
+<dl>
+<dt>Optimization problems - find min/max of a function <span class="math inline">\(f(x,y)\)</span></dt>
+<dd>At a local min or max, <span class="math inline">\(f_{x}=0\)</span> and <span class="math inline">\(f_{y}=0\)</span> <span class="math inline">\(\Leftrightarrow\)</span> tangent plane to graph <span class="math inline">\(z=f(x,y)\)</span> is horizontal
+</dd>
+<dt>critical point</dt>
+<dd><span class="math inline">\((x_{0}, y_{0})\)</span> is a critical point of f if <span class="math inline">\(f_{x}(x_{0}, y_{0})=0\)</span> and $f_{y}(x_{0}, y_{0})=0
+</dd>
+</dl>
+<p>ex) <span class="math display">\[f(x,y)=x^{2}-2xy+3y^{2}+2x-2y\]</span> <span class="math display">\[
+f_{x}=2x-2y+2 =0
+\]</span> <span class="math display">\[
+f_{y}=-2x+6y-2=0
+\]</span> <span class="math display">\[
+\therefore \quad \text{critical point } (x,y) = (-1, 0)
+\]</span> possible local min, local max, saddle. complete the square <span class="math display">\[
+f(x,y)=(x-y)^{2} + 2y^{2} + 2x - 2y
+\]</span> <span class="math display">\[
+f(x,y)=((x-y) + 1)^{2} + 2y^{2} - 1 \geqslant -1 = f(-1, 0)
+\]</span> critical point (-1, 0) is a minimum.</p>
+<dl>
+<dt>Least squares interpolation</dt>
+<dd>Given experimental data <span class="math inline">\((x_{1}, y_{1}), (x_{2}, y_{2}) \dots (x_{n}, y_{n})\)</span> find “best fit” line <span class="math inline">\(y=ax+b\)</span>
+</dd>
+</dl>
+<p>find minimizing total squere deviation a and b.</p>
+<p>deviation for each data point <span class="math inline">\(y_{i}-(ax_{i}+b)\)</span></p>
+<p>Minimize <span class="math inline">\(D(a,b) = \sum_{i=1}^{n}[y_{i}-(ax_{i}+b)]^{2}\)</span></p>
+<p><span class="math display">\[
+\frac {\partial{D}}{\partial{a}} = \sum_{i=1}^{n} 2 (y_{i} - (ax_{i} + b)) (-x_{i}) = 0
+\]</span> <span class="math display">\[
+\frac {\partial{D}}{\partial{b}} = \sum_{i=1}^{n} 2 (y_{i} - (ax_{i} + b)) (-1) = 0
+\]</span></p>
+<p><span class="math display">\[
+\begin{cases}
+\sum_{i=1}^{n} (x_{i}^{2}a + x_{i}b x_{i}y_{i}) = 0\\ 
+\sum_{i=1}^{n} (x_{i}a + b - y_{i}) = 0
+\end{cases}
+\]</span> <span class="math display">\[
+\Leftrightarrow
+\begin{cases}
+(\sum_{i=1}^{n} x_{i}^{2})a + (\sum_{i=1}^{n}x_{i})b  = (\sum_{i=1}^{n}x_{i}y_{i})\\ 
+(\sum_{i=1}^{n} x_{i})a + nb  = \sum_{i=1}^{n}y_{i}
+\end{cases}
+\]</span></p>
+<p>2x2 linear system. solve for (a, b)</p>
+<dl>
+<dt>Best exponential fit</dt>
+<dd><span class="math display">\[
+y=ce^{ax} \Leftrightarrow \ln(y) = \ln(c)+ax 
+\]</span>
+</dd>
+<dt>Best quadratic fit</dt>
+<dd><span class="math display">\[
+D(a, b, c) = \sum_{i=1}^{n}(y_{i} - (ax_{i}^{2} + bx_{i} + c))^{2}
+\]</span>
+</dd>
+</dl>
+<h2 id="implicit-differentiation">Implicit differentiation</h2>
+<p><span class="math display">\[
+\begin{aligned}
+y &amp;= f(x)\\
+dy &amp;= f\prime(x)dx
+\end{aligned}
+\]</span></p>
+<p>Ex : <span class="math display">\[
+\begin{aligned}
+y &amp;= \sin^{-1}(x)\\
+x &amp;= \sin(y)\\
+dx &amp; = \cos(y)dy\\
+\frac{dy}{dx} = \frac{1}{\cos(y)} = \frac{1}{\sqrt{1-x^{2}}}
+\end{aligned}
+\]</span></p>
+<p>if <span class="math inline">\(f(x, y, z)\)</span> <span class="math display">\[
+\begin{aligned}
+df &amp;= f_{x}dx + f_{y}dy + f_{z}dz\\
+   &amp;= \frac{\partial f}{\partial x} dx + \frac{\partial f}{\partial y}dy + \frac{\partial f}{\partial z}dz
+\end{aligned}
+\]</span></p>
+<p>df is not <span class="math inline">\(\nabla\)</span>f</p>
+<ul>
+<li><p>encode how change in x, y, z affect f</p></li>
+<li><p>placeholder for small variations <span class="math inline">\(\nabla x, \nabla y, \nabla z\)</span> to get approx formula <span class="math inline">\(\nabla f \approx f_{x}\nabla x + f_{y}\nabla y + f_{z}\nabla z\)</span></p></li>
+<li><p>divide by something like dt to get a rate of change when x = x(t), y=y(t), z=z(t) <span class="math display">\[
+\frac{df}{dt} = f_{x}\frac{dx}{dz} + f_{y}\frac{dy}{dt} + f_{z}{dz}{dt}
+\]</span></p></li>
+</ul>
+<h2 id="gradient">Gradient</h2>
+<p>at some point (x, y, z) <span class="math display">\[
+\nabla{w} = &lt; W_{x}, W_{y}, W_{z} &gt;
+\]</span></p>
+<dl>
+<dt>Theorem</dt>
+<dd><span class="math inline">\(\nabla {w} \bot\)</span> level surface; w = constant
+</dd>
+</dl>
+<p>ex)</p>
+<p><span class="math display">\[
+\begin{aligned}
+w &amp;= a_{1}x + a_{2}y + a_{3}z\\
+\nabla {w} &amp;= &lt;a_{1}, a_{2}, a_{3} &gt;;\quad a_{1} = \frac{\partial w}{\partial x}
+\end{aligned}
+\]</span></p>
+<p>level surface <span class="math display">\[
+a_{1}x + a_{2} + a_{3}z = c \qquad \text{pane with normal $&lt;a_{1}, a_{2}, a_{3}&gt;$}
+\]</span></p>
+<h2 id="directional-derivatives">directional derivatives</h2>
+<p>The directional derivative of f at <span class="math inline">\((X_{0} + y_{0})\)</span> in the direction of a unit vector <span class="math inline">\(u= &lt;a,b&gt;\)</span> is <span class="math display">\[
+D_{u}f(x_{0},y_{0}) = \lim_{h \to 0} \frac
+{f(x_{0} + ha, y_{0} + hb) - f(x_{0}, y_{0})}{h}
+\]</span> if this limit exists.</p>
+<p>The partial derivatives of f with respect to x and y are just special cases of the directional derivative.</p>
+<p>If f is a differentiable function of x and y, then f has a directinal derivative in the direction of any unit vector <span class="math inline">\(u = &lt;a,b&gt;\)</span> and <span class="math display">\[
+D_{u}f(x,y) = f_{x}(x,y)a + f_{y}(x,y)b
+\]</span></p>
+<h2 id="lagrange-multipliers">LAGRANGE MULTIPLIERS</h2>
+<figure>
+<img src="img/lagrange_multipliers.png" alt="Lagrange Multipliers" /><figcaption aria-hidden="true">Lagrange Multipliers</figcaption>
+</figure>
+<p>if <span class="math inline">\(\nabla g(x_{0}, y_{0}, z_{0}) \neq 0\)</span>, there is a number <span class="math inline">\(\lambda\)</span> such that <span class="math display">\[
+\nabla f(x_{0}, y_{0}, z_{0}) = \lambda \nabla g (x_{0}, y_{0}, z_{0})
+\]</span> The number <span class="math inline">\(\lambda\)</span> is called a Lagrange multiplier.</p>
+<dl>
+<dt>Method of Lagrange Multipliers</dt>
+<dd>To find the maximum and minimum values of <span class="math inline">\(f(x, y, z)\)</span> subjet to the constraint <span class="math inline">\(g(x, y, z) =k\)</span> [assuming that these extreme values exist and <span class="math inline">\(\nabla g \neq 0\)</span> on the surface <span class="math inline">\(g(x, y, z) = k\)</span>]
+</dd>
+</dl>
+<ul>
+<li>Find all values of x, y, z and <span class="math inline">\(\lambda\)</span> such that <span class="math display">\[
+\begin{aligned}
+\nabla f (x, y, z) = \lambda \nabla g(x, y, z)
+g(x, y, z) = k
+\end{aligned}
+\]</span></li>
+<li>Evaluate <span class="math inline">\(f\)</span> at all the points(x, y, z) that result from previous step. The largest of these values is the maximum value of <span class="math inline">\(f\)</span>; the smallest is the minimum value of <span class="math inline">\(f\)</span>.</li>
+</ul>
+<h2 id="vector-calculus">vector calculus</h2>
+<h3 id="the-fundamental-theorem-for-line-integrals">The fundamental Theorem for line integrals</h3>
+<p>Let C be a smooth curve given by the vector function r(t), <span class="math inline">\(a \eqslantless t \eqslantless b\)</span>. Let f be a differentiable function of two or three variables whos gradient vector <span class="math inline">\(\nabla f\)</span> is continuous on C. Then <span class="math display">\[
+\int_{C} \nabla f \cdot dr = f(r(b)) - f(r(a))
+\]</span></p>
+<p>Suppose F is a vector field that is continuous on an open connected region D. If <span class="math inline">\(\int_{C}F \cdot dr\)</span> is independent of path in D, then F is a conservative vector field on D; that is, there exists a function f such that f = F$.</p>
+<p>How is it possible to determine whether or not a vector field F is conservative? Suppose it is known that <span class="math inline">\(F = P \hat i + Q \hat j\)</span> is conservative, where P and Q have continuous first-order partial derivatives. then there is a function f such that <span class="math inline">\(F = \nabla f\)</span>, that is, <span class="math display">\[
+P = \frac{\partial f}{\partial x} \quad \text{and} \quad
+Q = \frac{\partial f}{\partial y}
+\]</span></p>
+<p>therefore, by Clairaut’s Theorem, <span class="math display">\[
+\frac{\partial P}{\partial y} =
+\frac{\partial^2 f}{\partial{y}\partial{x}} =
+\frac{\partial^2 f}{\partial{x}\partial{y}} =
+\frac{\partial{Q}}{\partial{x}}
+\]</span></p>
+<h3 id="curl">Curl</h3>
+<p>If <span class="math inline">\(F = p \hat i + Q \hat j + R \hat k\)</span> is a vector field on <span class="math inline">\(\mathbb {R}^{3}\)</span> and the partial derivatives of P, Q and R all exist, then the curl of F is the vector field on <span class="math inline">\(\mathbb {R}^{3}\)</span> defined by <span class="math display">\[
+\text{curl } F = \left ( \frac{\partial R}{\partial y} 
+- \frac{\partial Q}{\partial z}\right) \hat i +
+\left ( \frac{\partial P}{\partial z}
+- \frac{\partial R}{\partial x}\right ) \hat j +
+\left ( \frac{\partial Q}{\partial x}
+- \frac{\partial P}{\partial y} \right ) \hat k
+\]</span></p>
+<p>define the vector differential operator <span class="math inline">\(\nabla\)</span>(“del”) as <span class="math display">\[
+\nabla = \hat i \frac{\partial}{\partial x} 
++ \hat j \frac{\partial}{\partial y}
++ \hat k \frac{\partial}{\partial z}
+\]</span></p>
+<p><span class="math display">\[
+\nabla \times F = 
+  \begin{vmatrix}
+  i &amp; j &amp; k \\
+  \frac{\partial}{\partial x}
+  &amp; \frac{\partial}{\partial y}
+  &amp; \frac{\partial}{\partial z} \\
+  P &amp; O &amp; R
+  \end{vmatrix}
+\]</span></p>
+<p><span class="math display">\[
+\text{curl } F = \nabla \times F
+\]</span></p>
+<p>If f is a function of three variables that has continuous second-order partial derivatives, then <span class="math display">\[
+curl(\nabla f) = 0
+\]</span></p>
+<p>Since a conservative vector field is one for which <span class="math inline">\(F = \nabla f\)</span>, above can be rephrased as follows : If F is conservative, then cur F = 0.</p>
+<h3 id="divergence">Divergence</h3>
+<p>If <span class="math inline">\(F = P \hat i + Q \hat j + R \hat k\)</span> is a vector field on <span class="math inline">\(\mathbb R^3\)</span> and <span class="math inline">\(\partial P / \partial x\)</span>, <span class="math inline">\(\partial Q / \partial y\)</span>, and <span class="math inline">\(\partial R / \partial z\)</span> exist, then the divergence of F is the function of three variables defined by <span class="math display">\[
+div \quad \mathbf{F} = \frac{\partial P}{\partial x}
++ \frac{\partial Q}{\partial y}
++ \frac{\partial R}{\partial z}
+\]</span></p>
+<p><span class="math display">\[
+div \quad \mathbf{F} = \nabla \cdot F
+\]</span></p>
+<p>If <span class="math inline">\(F = P \hat i + Q \hat j + R \hat k\)</span> is a vector field on <span class="math inline">\(\mathbb{R}^3\)</span> and P, Q, and R have continuous second-order partial derivatives, then <span class="math display">\[
+div \quad curl \quad \mathbf{F} = 0
+\]</span></p>
+</article>
+</body>
+</html>

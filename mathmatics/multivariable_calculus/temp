@@ -1,0 +1,82 @@
+
+## vector calculus
+
+### The fundamental Theorem for line integrals
+
+Let C be a smooth curve given by the vector function r(t),
+$a \eqslantless t \eqslantless b$. Let f be a differentiable function of
+two or three variables whos gradient vector $\Delta f$ is continuous on C. Then
+$$
+\int_{C} \Delta f \cdot dr = f(r(b)) - f(r(a))
+$$
+
+Suppose F is a vector field that is continuous on an open connected
+region D. If $\int_{C}F \cdot dr$ is independent of path in D, then
+F is a conservative vector field on D; that is, there exists a function f
+such that $\Delta f = F$.
+
+How is it possible to determine whether or not a vector field F is conservative?
+Suppose it is known that $F = P \hat i + Q \hat j$ is conservative, where P
+and Q have continuous first-order partial derivatives. then there is a function
+f such that $F = \Delta f$, that is,
+$$
+P = \frac{\partial f}{\partial x} \quad \text{and} \quad
+Q = \frac{\partial f}{\partial y}
+$$
+
+therefore, by Clairaut's Theorem,
+$$
+\frac{\partial P}{\partial y} =
+\frac{\partial^2 f}{\partial{y}\partial{x}} =
+\frac{\partial^2 f}{\partial{x}\partial{y}} =
+\frac{\partial{Q}}{\partial{x}}
+$$
+
+### Curl
+
+If $F = p \hat i + Q \hat j + R \hat k$ is a vector field on $\mathbb {R}^{3}$
+and the partial derivatives of P, Q and R all exist, then the curl of F is 
+the vector field on $\mathbb {R}^{3}$ defined by
+$$
+\text{curl } F = \left ( \frac{\partial R}{\partial y} 
+- \frac{\partial Q}{\partial z}\right) \hat i +
+\left ( \frac{\partial P}{\partial z}
+- \frac{\partial R}{\partial x}\right ) \hat j +
+\left ( \frac{\partial Q}{\partial x}
+- \frac{\partial P}{\partial y} \right ) \hat k
+$$
+
+define the vector differential operator $\Delta$ ("del") as
+$$
+\Delta = \hat i \frac{\partial}{\partial x} 
++ \hat j \frac{\partial}{\partial y}
++ \hat k \frac{\partial}{\partial z}
+$$
+
+$$
+\Delta \times F = 
+\[
+  \begin{vmatrix}
+  i & j & k \\
+  \frac{\partial}{\partial x}
+  & \frac{\partial}{\partial y}
+  & \frac{\partial}{\partial z} \\
+  P & O & R
+  \end{vmatrix}
+\]
+$$
+
+$$
+\text{curl } F = \Delta \times F
+$$
+
+If f is a function of three variables that has continuous second-order
+partial derivatives, then
+$$
+curl(\Delta f) = 0
+$$
+
+Since a conservative vector field is one for which $F = \Delta f$, above can
+be rephrased as follows
+: 
+If F is conservative, then cur F = 0.
