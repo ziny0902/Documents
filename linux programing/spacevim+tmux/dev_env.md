@@ -150,6 +150,10 @@ font 설치 후 터미널이 설치된 font를 사용하도록 각 터미널에 
 
 version control로 git을 사용한다. 대부분의 linux distro들은 기본 프로그램으로 제공하고 있기 때문에 따로
 설치를 하지 않아도 되지만 만약 설치 되지 않았다면 git을 설치한다.
+다른 사람들과 협력 프로그래밍을 하지 않더라도 git의 프로토콜을 따르는 remote repository를 사용하는 것이 좋다.
+remote repository를 사용하면 다른 기기에서도 자유롭게 작업이 가능하다.
+대표적인 git remote repository는 [GitHub](https://github.com/)이다.
+계정을 생성하고 repository를 만들면 기본적인 사용법을 안내하는 페이지로 이동된다. 
 
 ## cmake
 
