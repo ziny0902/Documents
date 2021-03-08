@@ -1,0 +1,37 @@
+digraph stat {
+  rankdir=LR;
+	node [shape = circle];
+  Parser_Name -> Parser_Functioncall[label="("];
+  Parser_Name -> Parser_Functioncall[label=":"];
+  Parser_Name -> Parser_Functioncall[label="{"];
+  Parser_Name -> Parser_Functioncall[label="String"];
+  Parser_Name -> Parser_Assignment[label=","];
+  Parser_Name -> Parser_Assignment[label="="];
+  Parser_Name -> Parser_Var[label="."];
+  Parser_Name -> Parser_Var[label="["];
+  Parser_Stat -> Parser_Name[label="Name"];
+  Parser_Stat -> Parser_Prefixexp[label="("];
+  Parser_Stat -> Parser_Local[label="local"];
+  Parser_Stat -> Parser_If[label="if"];
+  Parser_Stat -> Parser_End[label="else"];
+  Parser_Stat -> Parser_End[label="esleif"];
+  Parser_Stat -> Parser_While[label="while"];
+  Parser_Stat -> Parser_For[label="for"];
+  Parser_Stat -> Parser_Do[label="do"];
+  Parser_Stat -> Parser_Repeat[label="repeat"];
+  Parser_Stat -> Parser_Break[label="break"];
+  Parser_Stat -> Parser_Return[label="return"];
+  Parser_Stat -> Parser_End[label="end"];
+  Parser_Stat -> Parser_End[label="until"];
+  Parser_Stat -> Parser_Function[label="function"];
+  Parser_Prefixexp -> Parser_Functioncall[label="("];
+  Parser_Prefixexp -> Parser_Functioncall[label=":"];
+  Parser_Prefixexp -> Parser_Var[label="."];
+  Parser_Prefixexp -> Parser_Var[label="["];
+  Parser_Var -> Parser_Functioncall[label="("];
+  Parser_Var -> Parser_Functioncall[label=":"];
+  Parser_Var -> Parser_Assignment[label=","];
+  Parser_Var -> Parser_Assignment[label="="];
+  Parser_Functioncall -> Parser_Var[label="."];
+  Parser_Functioncall -> Parser_Var[label="["];
+}

@@ -1,0 +1,41 @@
+/@book{/{
+s/@book{//
+s/,/\t/
+H
+d
+}
+/shorttitle/{
+d
+}
+/title/{
+s/^[[:blank:]]*//
+s/title = *//
+s/[{}]//g
+s/,/\t/
+H
+d
+}
+/keyword/{
+s/^[[:blank:]]*//
+s/keywords = *//
+s/[{}]//g
+H
+d
+}
+/isbn/{
+s/^[[:blank:]]*//
+s/isbn = *//
+s/[{}]//g
+s/,/\t/
+H
+d
+}
+/^\}/{
+x
+s/\n//g
+s/,$/\n/
+p
+s/.*//
+x
+d
+}

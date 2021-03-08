@@ -1,0 +1,7 @@
+digraph stat {
+  rankdir=LR;
+	node [shape = circle];
+  Parser_Args -> Parser_Explist[label=""];
+  Parser_Args -> Parser_Tableconstructor[label=""];
+  Parser_Args -> Parser_Simpexp[label=""];
+}

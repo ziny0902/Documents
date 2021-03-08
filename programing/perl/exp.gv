@@ -1,0 +1,21 @@
+digraph stat {
+  rankdir=LR;
+	node [shape = circle];
+  Parser_Exp -> Parser_Exp[label="biop"];
+  Parser_Unopexp -> Parser_Unopexp[label="unop"];
+  Parser_Unopexp -> Parser_Tableconstructor[label="{"];
+  Parser_Unopexp -> Parser_Prefixexp[label="("];
+  Parser_Unopexp -> Parser_Prefixexp[label="Name"];
+  Parser_Unopexp -> Parser_Simpexp[label="nil"];
+  Parser_Unopexp -> Parser_Simpexp[label="false"];
+  Parser_Unopexp -> Parser_Simpexp[label="true"];
+  Parser_Unopexp -> Parser_Simpexp[label="Number"];
+  Parser_Unopexp -> Parser_Simpexp[label="String"];
+  Parser_Unopexp -> Parser_Simpexp[label="..."];
+  Parser_Unopexp -> Parser_Funcbody[label="function"];
+  Parser_Unopexp -> Parser_Exp[label="biop"];
+  Parser_Tableconstructor -> Parser_Exp[label="biop"];
+  Parser_Prefixexp -> Parser_Exp[label="biop"];
+  Parser_Simpexp -> Parser_Exp[label="biop"];
+  Parser_Funcbody -> Parser_Exp[label="biop"];
+}

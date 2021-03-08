@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+ctags -f - --languages=perl --langmap=perl:.pl test.pl \
+| sed '/^!/d' | awk '{ print $1 }' | fzf
+#cat tags | sed '/^!/d' | awk '{ print $1 }' > functions

@@ -1,0 +1,94 @@
+) return domenu	menu.lua	/^      put(self, "<-- Back", function() return domenu(self.back) end)$/;"	f
+) return domenu	menu.lua	/^    put(self, name.." -->", function() return domenu(submenu) end)$/;"	f
+, function	luash/tests/test.lua	/^test('Check sh called as function', function()$/;"	f
+TERMINAL_HANDLER	luash/tests/gambiarra.lua	/^local function TERMINAL_HANDLER(e, test, msg)$/;"	f
+[1]	plterm/example/viewfile.lua	/^	[1] = function() color(col.normal) end, $/;"	f
+[2]	plterm/example/viewfile.lua	/^	[2] = function() color(col.red, col.bold) end, $/;"	f
+[3]	plterm/example/viewfile.lua	/^	[3] = function() color(col.green) end, $/;"	f
+[5]	plterm/example/viewfile.lua	/^	[5] = function() color(col.red, col.bgblack) end, $/;"	f
+__call	luash/sh.lua	/^	__call = function(_, cmd, ...)$/;"	f
+__index	luash/sh.lua	/^			__index = function(self, k, ...)$/;"	f
+__tostring	luash/sh.lua	/^			__tostring = function(self)$/;"	f
+a) print	string.lua	/^print( string.gsub( "The big {brown} fox jumped {over} the lazy {dog}.", "{(.*)}", function(a) print(a) end ) )$/;"	f
+a) print	string.lua	/^print( string.gsub( "The big {brown} fox jumped {over} the lazy {dog}.", "{(.-)}", function(a) print(a) end ) )$/;"	f
+about_dialog	menu.lua	/^local function about_dialog()$/;"	f
+arg	luash/sh.lua	/^local function arg(k, a)$/;"	f
+args	luash/tests/gambiarra.lua	/^local function args(...)$/;"	f
+based on stty	plterm/plterm.lua	/^It provides functions based on stty (so available on unix)$/;"	f
+brep2	plterm/example/viewfile.lua	/^local function brep2(b, li)$/;"	f
+brep3	plterm/example/viewfile.lua	/^local function brep3(b, li)$/;"	f
+clear	plterm/plterm.lua	/^	clear = function() out("\\027[2J") end,$/;"	f
+cleareol	plterm/plterm.lua	/^	cleareol = function() out("\\027[K") end,$/;"	f
+color	plterm/plterm.lua	/^	color = function(f,b,m)$/;"	f
+command	luash/sh.lua	/^local function command(cmd, ...)$/;"	f
+create_item	cheat_sheet_viewer.lua	/^function create_item( path,  flag)$/;"	f
+create_item	exviewer.lua	/^function create_item( path,  flag)$/;"	f
+curriedMethod:add	menu.lua	/^  function curriedMethod:add(name, id)$/;"	f
+curriedMethod:new	menu.lua	/^  function curriedMethod:new(name)$/;"	f
+curriedMethod:sub	menu.lua	/^  function curriedMethod:sub(name)$/;"	f
+deepeq	luash/tests/gambiarra.lua	/^local function deepeq(a, b)$/;"	f
+display	plterm/example/viewfile.lua	/^function display(txt)$/;"	f
+displines	plterm/example/viewfile.lua	/^function displines(txtl, li, maxl)$/;"	f
+dispmsg	plterm/example/viewfile.lua	/^function dispmsg(msg, l, w) puteol(l, 1, 3, pad(msg, w)) end	$/;"	f
+disptitle	plterm/example/viewfile.lua	/^function disptitle(title, l, w) puteol(l, 1, 3, pad(title, w)) end	$/;"	f
+domenu	menu.lua	/^  local function domenu(self)$/;"	f
+down	plterm/plterm.lua	/^	down = function(n) out("\\027[",n or 1,"B") end,$/;"	f
+drawmenu	menu.lua	/^  local function drawmenu(self)$/;"	f
+env.ok	luash/tests/gambiarra.lua	/^		env.ok = function(cond, msg)$/;"	f
+f	luash/sh.lua	/^	local function f(t)$/;"	f
+flatten	luash/sh.lua	/^local function flatten(t)$/;"	f
+golc	plterm/plterm.lua	/^	golc = function(l,c) out("\\027[",l,";",c,"H") end,$/;"	f
+hide	plterm/plterm.lua	/^	hide = function() out("\\027[?25l") end,$/;"	f
+if type(a)	luash/tests/gambiarra.lua	/^	if type(a) == 'function' then$/;"	f
+if type(name)	luash/tests/gambiarra.lua	/^	if type(name) == 'function' then$/;"	f
+input_validate	layout.lua	/^function input_validate(key)$/;"	f
+layout.display_menu	layout.lua	/^function layout.display_menu(menu_item, prompt_msg, keys)$/;"	f
+layout.input_loop	layout.lua	/^function layout.input_loop()$/;"	f
+left	plterm/plterm.lua	/^	left = function(n) out("\\027[",n or 1,"D") end,$/;"	f
+local getcode	plterm/plterm.lua	/^local getcode = function() return byte(io.read(1)) end$/;"	f
+local isdigitsc	plterm/plterm.lua	/^local isdigitsc = function(c)$/;"	f
+local max	plterm/example/viewfile.lua	/^local max = function(x, y) if x < y then return y else return x end end $/;"	f
+local min	plterm/example/viewfile.lua	/^local min = function(x, y) if x < y then return x else return y end end $/;"	f
+local put	plterm/example/viewfile.lua	/^local put = function(l, c, y, s) -- y is style number$/;"	f
+local puteol	plterm/example/viewfile.lua	/^local puteol = function(l, c, y, s) -- y is style number$/;"	f
+local repr	plterm/example/viewfile.lua	/^local repr = function(x) return strf("%q", tostring(x)) end$/;"	f
+local repr	plterm/test_plterm.lua	/^local repr = function(x) return strf("%q", tostring(x)) end$/;"	f
+local restore	luash/tests/gambiarra.lua	/^		local restore = function()$/;"	f
+local rv	menu.lua	/^        local rv = function(a, b) return func(self, a, b) end$/;"	f
+local testfn	luash/tests/gambiarra.lua	/^	local testfn = function(next)$/;"	f
+main	plterm/example/viewfile.lua	/^function main()$/;"	f
+meta:__index	menu.lua	/^  function meta:__index(key)$/;"	f
+method:sep	menu.lua	/^  function method:sep()$/;"	f
+method:super	menu.lua	/^  function method:super()$/;"	f
+mt.__index	luash/sh.lua	/^mt.__index = function(t, cmd)$/;"	f
+newmenu	menu.lua	/^  local function newmenu(name, back)$/;"	f
+ok(type(seq10)	luash/tests/test.lua	/^	ok(type(seq10) == 'function', 'sh() returns a command function')$/;"	f
+outf	plterm/plterm.lua	/^local function outf(...)$/;"	f
+pad	plterm/example/viewfile.lua	/^local function pad(s, col)$/;"	f
+process_input	layout.lua	/^function process_input(key)$/;"	f
+put	menu.lua	/^  local function put(self, name, action)$/;"	f
+reflow	plterm/example/viewfile.lua	/^local function reflow(txt, col)$/;"	f
+reset	plterm/plterm.lua	/^	reset = function() out("\\027c") end,$/;"	f
+restore	plterm/plterm.lua	/^	restore = function() out("\\027[u") end,$/;"	f
+right	plterm/plterm.lua	/^	right = function(n) out("\\027[",n or 1,"C") end,$/;"	f
+runpending	luash/tests/gambiarra.lua	/^local function runpending()$/;"	f
+save	plterm/plterm.lua	/^	save = function() out("\\027[s") end,$/;"	f
+setmetatable(s, {__call	luash/tests/gambiarra.lua	/^	setmetatable(s, {__call = function(s, ...)$/;"	f
+show	plterm/plterm.lua	/^	show = function() out("\\027[?25h") end,$/;"	f
+spy	luash/tests/gambiarra.lua	/^local function spy(f)$/;"	f
+term.getcurpos	plterm/plterm.lua	/^term.getcurpos = function()$/;"	f
+term.getscrlc	plterm/plterm.lua	/^term.getscrlc = function()$/;"	f
+term.input	plterm/plterm.lua	/^term.input = function()$/;"	f
+term.keyname	plterm/plterm.lua	/^term.keyname = function(c)$/;"	f
+term.rawinput	plterm/plterm.lua	/^term.rawinput = function()$/;"	f
+term.restoremode	plterm/plterm.lua	/^term.restoremode = function(mode)$/;"	f
+term.savemode	plterm/plterm.lua	/^term.savemode = function()$/;"	f
+term.setrawmode	plterm/plterm.lua	/^term.setrawmode = function()$/;"	f
+term.setsanemode	plterm/plterm.lua	/^term.setsanemode = function()$/;"	f
+terminal_close	layout.lua	/^function terminal_close()$/;"	f
+terminal_open	layout.lua	/^function terminal_open()$/;"	f
+test_ansi	plterm/test_plterm.lua	/^local function test_ansi()$/;"	f
+test_input	plterm/test_plterm.lua	/^local function test_input()$/;"	f
+up	plterm/plterm.lua	/^	up = function(n) out("\\027[",n or 1,"A") end,$/;"	f
+update_display	layout.lua	/^function update_display()$/;"	f
+w) return string.len	string.lua	/^print( string.gsub( "Hello Lua user", "(%w+)", function(w) return string.len(w) end ) )  -- Replace with lengths$/;"	f

@@ -1,0 +1,22 @@
+
+digraph prefixexp {
+  rankdir=LR;
+	node [shape = circle];
+  Parser_Name -> Parser_Args[label="("];
+  Parser_Name -> Parser_Args[label="{"];
+  Parser_Name -> Parser_Functioncall[label=":"];  
+  Parser_Name -> Parser_Args[label="String"];  
+  Parser_Name ->Parser_Name[label="."]
+  Parser_Name ->Parser_Unopexp[label="["]
+  Parser_Prefixexp -> Parser_Unopexp[label="("]
+  Parser_Prefixexp -> Parser_Name[label="Name"]
+  Parser_Var -> Parser_Args[label="("]
+  Parser_Var -> Parser_Args[label="{"]
+  Parser_Var -> Parser_Name[label="."]
+  Parser_Var -> Parser_Functioncall[label=":"]
+  Parser_Var -> Parser_Unopexp[label="["]
+  Parser_Functioncall -> Parser_Var[label="."]
+  Parser_Functioncall -> Parser_Unopexp[label="["]
+  Parser_Exp -> Parser_Var[label="."]
+  Parser_Exp -> Parser_Unopexp[label="["]
+}

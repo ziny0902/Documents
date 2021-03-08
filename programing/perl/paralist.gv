@@ -1,0 +1,10 @@
+
+digraph stat {
+  rankdir=LR;
+	node [shape = circle];
+  Parser_Paralist -> Parser_Name[label="Name"];
+  Parser_Paralist -> Parser_Arbitrary[label="..."];
+  Parser_Name -> Parser_Namelist[label=","];
+  Parser_Namelist -> Parser_Name[label="Name"];
+  Parser_Namelist -> Parser_Arbitrary[label="..."];
+}
