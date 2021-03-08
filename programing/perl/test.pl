@@ -519,11 +519,7 @@ sub parser_field {
   # '[' exp ']' '=' exp
   if ( $name eq "[" ) {
     parser_func_wraper( $parser, Parser_Unopexp );
-    $token = parser_getToken($parser);
-    stat_pop( $parser ); # remove '='
-    $name = %$token{name};
-    parser_error $parser, "syntax error : '=' missing\n" 
-      unless $name eq "=";
+    parser_expect( $parser, "=");
     parser_func_wraper( $parser, Parser_Unopexp );
   }elsif ( $name eq "Name" ) {
     $token = parser_getToken($parser);
@@ -800,6 +796,16 @@ sub parser_getToken{
   return undef;
 }
 
+sub parser_expect{
+  my $parser = shift(@_);
+  my $str = shift(@_);
+  my $token = parser_getToken( $parser );
+  stat_pop( $parser ); # delete $str.
+  if ( ${$token}{name} ne $str ) {
+    parser_error $parser, "syntax error: \'$str\' is expected\n";
+  }
+}
+
 sub parser_ungetToken{
   my $parser = shift(@_);
   my $token = shift(@_);
@@ -869,16 +875,12 @@ sub parser_if {
     if ( %$token{name} eq "if" ) {
       stat_pop( $parser ); # remove if
       parser_func_wraper($parser, Parser_Unopexp); # exp
-      $token = parser_getToken($parser); # then
-      stat_pop( $parser ); # remove then
-      parser_error $parser,  "syntax error : 'then' statement mssing\n" if ( %$token{name} ne "then" ); 
+      parser_expect( $parser, "then");
       while (parser_stat_decision($parser) != Parser_End){} # block
     }elsif ( %$token{name} eq "elseif" ) { #elseif
       stat_pop( $parser ); # remove elseif
       parser_func_wraper( $parser, Parser_Unopexp ); # exp
-      $token = parser_getToken($parser); #then
-      stat_pop( $parser ); # remove then
-      parser_error $parser,  "syntax error : 'then' statement mssing\n" if ( %$token{name} ne "then" ); 
+      parser_expect( $parser, "then");
       while (parser_stat_decision($parser) != Parser_End){} # block
     }elsif ( %$token{name} eq "else" ) { # else
       stat_pop( $parser ); # remove else
@@ -890,10 +892,7 @@ sub parser_if {
       parser_error $parser,  "syntax error : 'end' missing\n";
     }
   }while( $token = parser_getToken($parser) );
-  stat_pop( $parser ); # remove end
-  if ( %$token{name} ne "end" ) {
-      parser_error $parser,  "syntax error : 'end' missing\n";
-  }
+  parser_expect( $parser, "end");
   return Parser_If;
 }
 
@@ -911,10 +910,7 @@ sub parser_for {
     stat_pop( $parser ); # remove '='
     parser_func_wraper( $parser, Parser_Name ); # [Name] = exp
     parser_func_wraper( $parser, Parser_Unopexp ); # Name = [exp]
-    $token = parser_getToken($parser); 
-    stat_pop( $parser ); # remove ','
-    parser_error $parser,  "syntax error : for ',' missing\n"
-      if %$token{name} ne ",";
+    parser_expect( $parser, "," );
     parser_func_wraper( $parser, Parser_Unopexp );
     $token = parser_getToken($parser); 
     if ( %$token{name} eq "," ){ # = exp, exp, exp
@@ -925,10 +921,7 @@ sub parser_for {
     }
   }elsif ( %$token{name} eq ',') { # Namelist in explist
     parser_func_wraper( $parser, Parser_Namelist ); # Namelist
-    $token = parser_getToken($parser); 
-    stat_pop( $parser ); # remove 'in'
-    parser_error $parser,  "syntax error : 'in' missing\n"
-      if %$token{name} ne "in";      # Namelist in ...
+    parser_expect( $parser, "in" );
     parser_func_wraper( $parser, Parser_Explist); # Namelist
   }elsif ( %$token{name} eq 'in') { # name in explist
     stat_pop( $parser ); # remove 'in'
@@ -975,13 +968,9 @@ sub parser_while {
 # do block end
 sub parser_do{
   my $parser = shift(@_);
-  my $token = parser_getToken($parser); # do
-  stat_pop( $parser ); # remove 'do'
-  parser_error $parser,  "syntax error : 'do' statement mssing\n" if ( %$token{name} ne "do" ); 
+  parser_expect( $parser, "do" );
   while (parser_stat_decision($parser) != Parser_End){} # block
-  $token = parser_getToken($parser); # end 
-  stat_pop( $parser ); # remove 'end'
-  parser_error $parser,  "syntax error : 'end' statement mssing\n" if ( %$token{name} ne "end" ); 
+  parser_expect( $parser, "end" );
   return Parser_Do;
 }
 
@@ -1001,24 +990,11 @@ sub parser_function {
 
 sub parser_funcbody {
   my $parser = shift(@_);
-  my $token = parser_getToken($parser); # end 
-  if( %$token{name} ne "(" ) {
-    parser_error $parser,  "syntax error : parameter missing\n";
-  }
-  stat_pop( $parser ); # remove '('
-  #parser_paralist( $parser );
+  parser_expect( $parser, "(" );
   parser_func_wraper( $parser, Parser_Paralist );
-  $token = parser_getToken($parser); # end 
-  if( %$token{name} ne ")" ) {
-    parser_error $parser,  "syntax error : ')' missing\n";
-  }
-  stat_pop( $parser ); # remove ')'
+  parser_expect( $parser, ")" );
   while ( parser_stat_decision( $parser ) != Parser_End ){} # block
-  $token = parser_getToken($parser); # end 
-  stat_pop( $parser ); # remove 'end'
-  #stat_dump( $parser );
-  parser_error $parser,  "syntax error : 'end' statement mssing\n" 
-    if ( %$token{name} ne "end" ); 
+  parser_expect( $parser, "end" );
   return Parser_Funcbody;
 }
 
