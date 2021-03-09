@@ -539,69 +539,6 @@ sub parser_field {
   return Parser_Field;
 }
 
-# stat decision machine
-BEGIN {
-  my @stat_transition = ();
-  $stat_transition[Parser_Stat] = {
-    "Name" => Parser_Name,
-    "(" => Parser_Prefixexp,
-    "local" => Parser_Local,
-    "if" => Parser_If,
-    "else" => Parser_End,
-    "elseif" => Parser_End,
-    "while" => Parser_While,
-    "for" => Parser_For,
-    "do" => Parser_Do,
-    "repeat" => Parser_Repeat,
-    "break" => Parser_Break,
-    "return" => Parser_Return,
-    "end" => Parser_End,
-    "until" => Parser_End,
-    "function" => Parser_Function,
-  };
-  $stat_transition[Parser_Name] = {
-    "(" => Parser_Functioncall,
-    ":" => Parser_Functioncall,
-    "{" => Parser_Functioncall,
-    "String" => Parser_Functioncall,
-    "," => Parser_Assignment,
-    "=" => Parser_Assignment,
-    "." => Parser_Var,
-    "[" => Parser_Var
-  };
-  $stat_transition[Parser_Prefixexp] = {
-    "(" => Parser_Functioncall,
-    ":" => Parser_Functioncall,
-    "." => Parser_Var,
-    "[" => Parser_Var
-  };
-  $stat_transition[Parser_Var] = {
-    "(" => Parser_Functioncall,
-    ":" => Parser_Functioncall,
-    "," => Parser_Assignment,
-    "=" => Parser_Assignment,
-  };
-  $stat_transition[Parser_Functioncall] = {
-    "." => Parser_Var,
-    "[" => Parser_Var,
-  };
-# args: parser_state, name
-# return: Parser_... 
-  sub parser_update_state{
-    my $parser_state = shift(@_);
-    # print "\@_: @_ // parser_state = $parser_state \n";
-    my $hash = $stat_transition[$parser_state];
-    if (defined %$hash{@_}){
-      $parser_state = %$hash{@_}
-    } else {
-      $parser_state = Parser_Error;
-    }
-
-     return $parser_state;
-  }
-}
-
-
 my %keywords = (
   "and" => 1,
   "break" => 1,
@@ -722,6 +659,13 @@ sub parser_tokenizer{
 
   {
     return undef if not defined (my $ch = shift(@$as));
+    if( $ch eq "-" ) {
+      my $peek = $ch . ${$as}[0];
+      if( $peek eq "--" ){ #comment
+        while( shift(@$as) ){}
+        return undef;
+      }
+    }
     if( $ch =~ /[a-zA-Z_]/){
       %token = scan_name($ch, $as);
       # print "$token{value}\n" if $token{name} eq "Name";
@@ -782,13 +726,13 @@ sub parser_getToken{
   return undef unless $fh;
   while (<$fh>) {
     ${$parser}{line} = ${$parser}{line} + 1;
-    s/--.*$//;  # remove a comment
+    s/^--.*$//;  # remove a comment
     s/^#!.*$//;  # remove a shell instruction
     s/^\s+//;   # remove a leading whitespace
     s/\s+$//;   # remove a tailing whitespace
     next if length($_) == 0;
     @$as = split(//, $_);
-    my $token = parser_tokenizer($as); 
+    next unless ( my $token = parser_tokenizer($as) ); 
     stat_push( $parser, $token );
     return $token;
   } 
@@ -1082,6 +1026,10 @@ BEGIN{
     my $token = parser_getToken( $parser );
     return $state unless $token;
     my $name = %$token{name};
+    if( $name eq ";" ) {
+      stat_pop( $parser );
+      return Parser_Stat;
+    }
     parser_ungetToken( $parser );
     # functioncall or assignment.
     if( ($name eq "Name") || ($name eq "(") ) {
@@ -1146,7 +1094,10 @@ sub parser_func_wraper{
   #print __LINE__ . " " . $state . " ";
   #print_parser_state( $state );
   #print __LINE__ . " wrapper [$name] [$value]\n";
-  if( $name =~ /[\.\:]/ && $state == Parser_Name ){}
+  if( $name =~ /[\.\:]/ && $state == Parser_Name ){
+   stat_push( $parser, $token ); 
+   parser_func_wraper( $parser, Parser_Op );
+  }
   elsif( ($name eq "(" || $name eq "[") && $state == Parser_Unopexp ){}
   elsif( $name ) { 
    stat_push( $parser, $token ); 
@@ -1154,7 +1105,10 @@ sub parser_func_wraper{
 
   parser_ungetAllToken( $parser );
   my $func = $state_func_map[$state];
-  return $state unless $func; # Invalid function call
+  unless( $func ){ # Invalid function call
+    #parser_expect( ";" );
+    return $state;
+  }
   ######################
   #create AST child node
   ######################
@@ -1215,7 +1169,8 @@ sub tree_print {
 
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
-my $filename = "test.lua";
+my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
+#my $filename = "test.lua";
 my $parser = undef;
 my @stat = ();
 

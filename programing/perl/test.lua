@@ -24,7 +24,7 @@ polyline = {color="blue", thickness=2, npoints=4,
                {x=-10, y=0},
                {x=-10, y=1},
                {x=0,   y=1}
-             }
+             };
 opnames = {["+"] = "add", ["-"] = "sub",
                ["*"] = "mul", ["/"] = "div"}
 a = {[i+0] = s, [i+1] = s..s, [i+2] = s..s..s}
@@ -37,7 +37,8 @@ split("a,b,c", ",")
 tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
 str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
 string.gmatch(example, "%S+") 
-
+awful.spawn.with_shell("picom --backend glx --vsync")
+--awful.spawn.with_shell("picom backend glx vsync")
 --
 -- local assignmeent test suit
 --
