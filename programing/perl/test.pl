@@ -70,6 +70,7 @@ $state_func_map[Parser_Return] = \&parser_return;
 $state_func_map[Parser_Break] = \&parser_break;
 $state_func_map[Parser_Op] = \&parser_op;
 $state_func_map[Parser_Util] = \&parser_util;
+$state_func_map[Parser_End] = \&parser_end;
 
 my %parentheses_pair = (
   "(" => ")",
@@ -103,6 +104,29 @@ sub ast_add_child {
   ${$child_node}{parent} = $root;
 } 
 
+sub ast_get_child{
+  my $root = shift;
+  my $path = shift;
+  my @as = split(/\//, $path);
+  my $node ;
+  for my $node_name ( @as ){
+    my @arr = split(/#/, $node_name);
+    my $name = shift( @arr );
+    my $idx = shift( @arr );
+    $idx = 0 unless $idx;
+    my $i = -1;
+    for $node ( @{${$root}{child}} ){
+      if( ${$node}{name} eq $name ){
+        $root = $node;
+        $i++;
+        last if $i == $idx;
+      }
+    }
+    return undef unless ${$root}{name} eq $name; # there wasn't a matching child.
+  }
+  return $root;
+}
+
 sub ast_add_neighbor {
   my $self = shift( @_ );
   my $child_node = shift( @_ );
@@ -110,18 +134,192 @@ sub ast_add_neighbor {
   ${$child_node}{parent} = ${$self}{parent};
 }
 
+BEGIN{
+my %assign_table= ();
+sub proc_function{
+  my $node = shift;
+}
+
+sub get_varname {
+  my $node = shift;
+  my $str = "" ;
+  if( length( ${$node}{value} ) ) {
+    $str = $str . ${$node}{value};
+  }
+  
+  for my $child( @{${$node}{child}} ){
+    my $ret = get_varname( $child );
+    if( ${$child}{name} eq "Exp" ) {
+      $ret = "[" . $ret . "]";
+    }
+    $str = $str . $ret;
+  }
+  return $str;
+}
+
+
+sub get_namelist{
+  my $node = shift;
+  my $end_line = shift;
+  my @names= (); 
+
+  for my $child ( @{${$node}{child}} ){
+    my $str = ${$child}{value};
+    my $start_line = ${$child}{line};
+    push( @names, [ $str, "v", [ $start_line, $end_line ] ] );
+  }
+  return \@names;
+}
+
+sub get_varlist{
+  my $node = shift;
+  my @vars = (); 
+  
+  for my $child( @{${$node}{child}} ){
+    my $str = get_varname( $child );
+    push( @vars, $str );
+  }
+  return \@vars;
+}
+
+sub register_variable{
+  my $node = shift;
+  my $vars = shift;
+  my $line = ${$node}{line};
+  for my $var ( @$vars ){
+    next if ( $assign_table{$var} ); # already exist
+    $assign_table{$var} = $line;
+  }
+}
+
+sub dump_assign_table{
+  for my $key ( keys %assign_table ){
+    print $key . " ,line : " . $assign_table{$key} . "\n";
+  }
+}
+
+sub proc_assignment{
+  my $node = shift;
+  my @vars = ();
+  my $i = 0;
+  for my $child( @{${$node}{child}} ){
+    last if ${$child}{name} eq "Explist";
+    if( ${$child}{name} eq "Var" )
+    {
+      my $ret= get_varname( $child );
+      push( @vars, $ret );
+    }else { # 'Varlist'
+      my $ret= get_varlist( $child );
+      for my $var ( @{$ret} ){
+        push( @vars, $var );
+      }
+    }
+  }
+  register_variable( $node, \@vars );
+}
+
+sub get_blockend{
+  my $node = shift;
+  my $child = ${$node}{child};
+  my $last = $#{$child};
+  my $block_end;
+
+  if( $last >= 0 ) {
+    $block_end = get_blockend( ${$child }[$last] );
+  }else {
+    return ${$node}{line};
+  }
+  return $block_end;
+}
+
+my %var_table = ();
+
+sub proc_is_funcdef{
+  my $node = shift; #Explist
+  my $idx = shift;
+  my $child = ast_get_child( $node, "Exp#" . $idx . "/Function body" ); 
+  if( $child ) {
+    return 1;
+  }else {
+    return 0;
+  }
+}
+
+sub proc_is_table{
+  my $node = shift; #Explist
+  my $idx = shift;
+  my $child = ast_get_child( $node, "Exp#" . $idx . "/Tableconstructor" ); 
+  if( $child ) {
+    return 1;
+  }else {
+    return 0;
+  }
+}
+
+sub proc_local{
+  my $node = shift;
+  my $parent = ${$node}{parent};
+  my $child;
+  my $block_end = get_blockend( $parent );
+  if( $child = ast_get_child( $node, "Name" ) ) { #function definition
+    my $block_end = get_blockend( $node );
+    my @name = (${$child}{value}, "f", [${$child}{line}, $block_end]);
+    push( @{$var_table{ $name[0] }}, \@name );
+    return;
+  }
+  $child = ast_get_child( $node, "Namelist" );
+  my $names = get_namelist( $child, $block_end ); # Namelist
+  $child = ast_get_child( $node, "Explist" );
+  my $i = 0;
+  for my $name ( @$names ) {
+    my $is_func = proc_is_funcdef( $child, $i ); #Explist
+    if( $is_func ) {
+      ${$name}[1] = "f";
+      $block_end = get_blockend( $child );
+      ${$name}[2][1] = $block_end;
+    }
+    elsif ( proc_is_table( $child, $i ) ){ 
+      ${$name}[1] = "t";
+      $block_end = get_blockend( $child );
+      ${$name}[2][1] = $block_end;
+    }
+    push( @{$var_table{ ${$name}[0] }}, $name );
+    $i++;
+  }
+}
+
+sub dump_var_table{
+  for my $key ( keys %var_table ){
+    my $num = @{$var_table{$key}};
+    print $key;
+    for (my $i=0; $i < $num; $i++){
+      print "\t" . $var_table{$key}[$i][2][0] 
+      . "-" . $var_table{$key}[$i][2][1] . "\t" 
+      . $var_table{$key}[$i][1];
+    }
+    print "\n";
+  }
+}
+
+}
+
 sub ast_tree_dump {
   my $root = shift(@_);
   my $print_func = shift( @_ );
   my $prefix = shift( @_ );
   my $value = ${$root}{value};
-  print $prefix . ${$root}{name} . ": ";
-  if ( $value ) {
-    $print_func->( ${$root}{value} );
-  }
-  print " ......" . ${$root}{line};
-  print "\n";
+#  print $prefix . ${$root}{name} . ": ";
+#  if ( $value ) {
+#    $print_func->( ${$root}{value} );
+#  }
+#  print "\t___[" . ${$root}{line};
+#  print "]\n";
   for my $child( @{${$root}{child}} ){
+    if( ${$child}{name} eq "Assignment" ) {
+      proc_assignment( $child );
+    }elsif( ${$child}{name} eq "Local" ) {
+      proc_local( $child );
+    }
     ast_tree_dump( $child, $print_func, $prefix . "  "  );
   }
 }
@@ -167,10 +365,13 @@ BEGIN {
     my $token;
     my $str = "";
     while( $token = stat_shift( $parser ) ) {
+      if( length( $str ) ){ 
+        $str = $str . " ";
+      }
       if ( $literal{ %$token{name} } ) {
-        $str = $str . " ". %$token{value};
+        $str = $str .  %$token{value};
       }else {
-        $str = $str . " ". %$token{name};
+        $str = $str .  %$token{name};
       }
     }
     return $str;
@@ -279,6 +480,9 @@ BEGIN{
         stat_pop( $parser ); # remove keyword 'function'
       }
       parser_func_wraper( $parser, $state );
+      if( $state == Parser_Funcbody ){
+        parser_func_wraper( $parser, Parser_End );
+      }
       $state = Parser_Unopexp;
       $token = parser_getToken($parser);
       if( defined $biop{%$token{name}} ) # exp biop exp
@@ -482,6 +686,7 @@ sub parser_local {
     stat_pop( $parser );
     parser_func_wraper( $parser, Parser_Name );
     parser_func_wraper( $parser, Parser_Funcbody );
+    parser_func_wraper( $parser, Parser_End );
   }else {
     parser_error $parser,  "syntax error : local Namelist or local function\n";
   }
@@ -830,7 +1035,10 @@ sub parser_if {
       stat_pop( $parser ); # remove else
       while (parser_stat_decision($parser) != Parser_End){} # block
     }elsif ( %$token{name} eq "end" ) {
-      stat_pop( $parser ); # remove end
+      my $root = ${$parser}{root};
+      ${$parser}{root} = ${$root}{parent};
+      parser_func_wraper( $parser, Parser_End); # end 
+      ${$parser}{root} = $root;
       return Parser_If;
     }else {
       parser_error $parser,  "syntax error : 'end' missing\n";
@@ -912,9 +1120,15 @@ sub parser_while {
 # do block end
 sub parser_do{
   my $parser = shift(@_);
-  parser_expect( $parser, "do" );
+  parser_expect( $parser, "do" ); # do
   while (parser_stat_decision($parser) != Parser_End){} # block
-  parser_expect( $parser, "end" );
+
+  {
+    my $root = ${$parser}{root};
+    ${$parser}{root} = ${$root}{parent};
+    parser_func_wraper( $parser, Parser_End); # end 
+    ${$parser}{root} = $root;
+  }
   return Parser_Do;
 }
 
@@ -929,6 +1143,7 @@ sub parser_function {
   stat_pop( $parser );
   parser_func_wraper( $parser, Parser_Funcname );
   parser_func_wraper( $parser, Parser_Funcbody );
+  parser_func_wraper( $parser, Parser_End );
   return Parser_Function;
 }
 
@@ -938,7 +1153,6 @@ sub parser_funcbody {
   parser_func_wraper( $parser, Parser_Paralist );
   parser_expect( $parser, ")" );
   while ( parser_stat_decision( $parser ) != Parser_End ){} # block
-  parser_expect( $parser, "end" );
   return Parser_Funcbody;
 }
 
@@ -1037,7 +1251,8 @@ BEGIN{
     }
     else {
        unless( $state = $stat_func_map{$name} ){
-        $state = Parser_End;
+        parser_ungetToken( $parser, $token );
+        return Parser_End;
       }
     }
     parser_func_wraper( $parser, $state );
@@ -1066,11 +1281,19 @@ sub parser_op{
   my $token = parser_getToken( $parser );
   return Parser_Op;
 }
+sub parser_end{
+  my $parser = shift;
+  my $token = parser_getToken( $parser );
+  parser_error $parser, "syntax error : 'end' is expected\n" 
+    unless ${$token}{name} eq "end";
+  stat_pop( $parser );
+  return Parser_End;
+}
 
 sub parser_break{
   my $parser = shift;
   my $token = parser_getToken( $parser );
-  stat_pop( $parser ); # remove 'break';
+  #stat_pop( $parser ); # remove 'break';
   return Parser_Break;
 }
 
@@ -1181,7 +1404,9 @@ $parser = parser_create( $fh );
 my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
-  ast_tree_dump( $root, \&tree_print, "" );
+ast_tree_dump( $root, \&tree_print, "" );
+#dump_assign_table();
+dump_var_table();
 
 close($fh);
 
