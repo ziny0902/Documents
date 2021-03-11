@@ -41,14 +41,14 @@ local level_item = {
     path = ex_home,
     prompt = "Select Category [Back(b), Quit(q)] : ",
     menu_keys = {'b', 'q'},
-    menu{},
+    menu = {},
     flag = DIRECTORY
   },
   {
     path = ex_home,
     prompt = "Select Example [Home(h), Back(b), Quit(q)] : ",
     menu_keys = {'h', 'b', 'q'},
-    menu{},
+    menu = {},
     flag = FILE
   }
 }

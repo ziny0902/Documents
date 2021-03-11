@@ -1,3 +1,4 @@
+#!/usr/bin/perl -I.
 use 5.32.0;
 
 use enum qw(
@@ -7,6 +8,8 @@ use enum qw(
     Paralist Arbitrary Funcname Return String End Unopexp 
     Simpexp Block Op Util Error 
 );
+
+use AST;
 
 my @state_name_table = ();
 $state_name_table[Parser_Stat] = "Stat";
@@ -83,57 +86,6 @@ sub print_parser_state{
   print "parser state : $state_name_table[$state]\n";
 }
 
-# AST 
-sub ast_create_node {
-  my $name = shift( @_ );
-  my $value = shift( @_ );
-  my @arr = ();
-  my %root = (
-    child => \@arr,
-    name => $name,
-    value => $value,
-    line => 0,
-  );
-  return \%root;
-}
-
-sub ast_add_child {
-  my $root = shift( @_ );
-  my $child_node = shift( @_ );
-  push ( @{ ${$root}{child} }, $child_node );
-  ${$child_node}{parent} = $root;
-} 
-
-sub ast_get_child{
-  my $root = shift;
-  my $path = shift;
-  my @as = split(/\//, $path);
-  my $node ;
-  for my $node_name ( @as ){
-    my @arr = split(/#/, $node_name);
-    my $name = shift( @arr );
-    my $idx = shift( @arr );
-    $idx = 0 unless $idx;
-    my $i = -1;
-    for $node ( @{${$root}{child}} ){
-      if( ${$node}{name} eq $name ){
-        $root = $node;
-        $i++;
-        last if $i == $idx;
-      }
-    }
-    return undef unless ${$root}{name} eq $name; # there wasn't a matching child.
-  }
-  return $root;
-}
-
-sub ast_add_neighbor {
-  my $self = shift( @_ );
-  my $child_node = shift( @_ );
-  push ( @{ ${${$self}{parent}}{child} }, $child_node );
-  ${$child_node}{parent} = ${$self}{parent};
-}
-
 BEGIN{
 my %assign_table= ();
 sub proc_function{
@@ -156,7 +108,6 @@ sub get_varname {
   }
   return $str;
 }
-
 
 sub get_namelist{
   my $node = shift;
@@ -237,7 +188,7 @@ my %var_table = ();
 sub proc_is_funcdef{
   my $node = shift; #Explist
   my $idx = shift;
-  my $child = ast_get_child( $node, "Exp#" . $idx . "/Function body" ); 
+  my $child = AST::get_child( $node, "Exp#" . $idx . "/Function body" ); 
   if( $child ) {
     return 1;
   }else {
@@ -248,7 +199,7 @@ sub proc_is_funcdef{
 sub proc_is_table{
   my $node = shift; #Explist
   my $idx = shift;
-  my $child = ast_get_child( $node, "Exp#" . $idx . "/Tableconstructor" ); 
+  my $child = AST::get_child( $node, "Exp#" . $idx . "/Tableconstructor" ); 
   if( $child ) {
     return 1;
   }else {
@@ -261,15 +212,15 @@ sub proc_local{
   my $parent = ${$node}{parent};
   my $child;
   my $block_end = get_blockend( $parent );
-  if( $child = ast_get_child( $node, "Name" ) ) { #function definition
+  if( $child = AST::get_child( $node, "Name" ) ) { #function definition
     my $block_end = get_blockend( $node );
     my @name = (${$child}{value}, "f", [${$child}{line}, $block_end]);
     push( @{$var_table{ $name[0] }}, \@name );
     return;
   }
-  $child = ast_get_child( $node, "Namelist" );
+  $child = AST::get_child( $node, "Namelist" );
   my $names = get_namelist( $child, $block_end ); # Namelist
-  $child = ast_get_child( $node, "Explist" );
+  $child = AST::get_child( $node, "Explist" );
   my $i = 0;
   for my $name ( @$names ) {
     my $is_func = proc_is_funcdef( $child, $i ); #Explist
@@ -601,6 +552,7 @@ BEGIN{
   $transition[Parser_Functioncall] = {
     "." => Parser_Var,
     "[" => Parser_Unopexp,
+    ":" => Parser_Name,
   };
   $transition[Parser_Exp] = {
     "." => Parser_Var,
@@ -905,7 +857,7 @@ sub parser_create{
   my $fh = shift(@_);
   my @as = ();
   my @tokens = ();
-  my $root = ast_create_node("block", ""); 
+  my $root = AST::create_node("block", ""); 
   my %parser = (
     fh => $fh,
     as => \@as,
@@ -1335,8 +1287,8 @@ sub parser_func_wraper{
   ######################
   #create AST child node
   ######################
-  my $child = ast_create_node( $state_name_table[$state], "");
-  ast_add_child( $root, $child );
+  my $child = AST::create_node( $state_name_table[$state], "");
+  AST::add_child( $root, $child );
   ${$child}{line} = ${$parser}{line};
   ${$parser}{root} = $child; # swap the root with the child
   ######################
@@ -1392,8 +1344,9 @@ sub tree_print {
 
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
-my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
+#my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
 #my $filename = "test.lua";
+my $filename = "../lua/exviewer/exviewer.lua";
 my $parser = undef;
 my @stat = ();
 

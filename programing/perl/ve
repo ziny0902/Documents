@@ -1,2 +1,2 @@
 #!/usr/bin/bash
-perl test.pl | awk -F '\t' '/v$/{printf "%-40s%-20s\n", $1, $2 }' | fzf
+./test.pl | awk -F '\t' '/v$/{printf "%-40s%-20s\n", $1, $2 }' | fzf

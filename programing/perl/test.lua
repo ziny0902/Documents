@@ -1,3 +1,5 @@
+str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
+local cmd_result = tostring((ls ("-l " .. path) : awk (action) ))
 --
 -- assignment test suit
 --
@@ -35,7 +37,6 @@ days = {[0]="Sunday", "Monday", "Tuesday", "Wednesday",
 --
 split("a,b,c", ",") 
 tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
-str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
 string.gmatch(example, "%S+") 
 awful.spawn.with_shell("picom --backend glx --vsync")
 --awful.spawn.with_shell("picom backend glx vsync")

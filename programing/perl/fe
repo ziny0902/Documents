@@ -1,4 +1,12 @@
 #!/usr/bin/bash
-perl test.pl | awk -F '\t' '/f$/{printf "%-40s%-20s\n", $1, $2 }' | fzf | awk '{print $2}' | awk -F '-' '{printf "set ts=2\n%d,%dp\n", $1, $2}' | ed -s /home/ziny/.config/awesome.RedFlat/color/blue/keys-config.lua > tmp
-bat --tabs 2 tmp
-\rm tmp
+while true; do
+  ./test.pl \
+    | awk -F '\t' '/[ft]$/{printf "%-40s%-20s%-5s\n", $1, $2, $3 }' \
+    | fzf \
+    | awk '{print $2}' \
+    | awk -F '-' '{printf "%d,%dp\n", $1, $2}' \
+    | ed -s /home/ziny/.config/awesome.RedFlat/color/blue/keys-config.lua \
+    > tmp.lua 
+  [ -s tmp.lua ] &&  bat --pager "less -R" --tabs 2 tmp.lua || exit 1
+  \rm tmp.lua
+done
