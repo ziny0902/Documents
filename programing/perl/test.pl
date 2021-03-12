@@ -6,7 +6,7 @@ use enum qw(
     Explist Assignment Function Functioncall Tableconstructor Local 
     Field Transition If Do While Repeat For Break Funcbody
     Paralist Arbitrary Funcname Return String End Unopexp 
-    Simpexp Block Op Util Label Error 
+    Simpexp Block Op Util Label Goto Class Error 
 );
 
 use AST;
@@ -46,6 +46,8 @@ $state_name_table[Parser_Field] = "Field";
 $state_name_table[Parser_Unopexp] = "exp";
 $state_name_table[Parser_Util] = "Util";
 $state_name_table[Parser_Label] = "Label";
+$state_name_table[Parser_Goto] = "Goto";
+$state_name_table[Parser_Class] = "Class";
 
 my @state_func_map=();
 $state_func_map[Parser_Var] = \&parser_var;
@@ -77,6 +79,8 @@ $state_func_map[Parser_Break] = \&parser_break;
 $state_func_map[Parser_Op] = \&parser_op;
 $state_func_map[Parser_Util] = \&parser_util;
 $state_func_map[Parser_Label] = \&parser_label;
+$state_func_map[Parser_Goto] = \&parser_goto;
+$state_func_map[Parser_Class] = \&parser_class;
 $state_func_map[Parser_End] = \&parser_end;
 
 my %parentheses_pair = (
@@ -92,9 +96,6 @@ sub print_parser_state{
 
 BEGIN{
 my %assign_table= ();
-sub proc_function{
-  my $node = shift;
-}
 
 sub get_varname {
   my $node = shift;
@@ -150,6 +151,23 @@ sub register_variable{
 sub dump_assign_table{
   for my $key ( keys %assign_table ){
     print $key . " ,line : " . $assign_table{$key} . "\n";
+  }
+}
+
+sub proc_assign_table_member{
+  for my $key ( keys %assign_table ){
+    if( $key =~ /\./ ) {
+      my @names = split( /\./, $key );
+      my $name = $names[$#names];
+      my $path = join( '/', @names );
+      my $table = AST::create_node( $name, "v"); 
+      my $exist = AST::get_child( $table_root, $path );
+      if( not $exist ) {
+        pop( @names );
+        $path = join( '/', @names );
+        AST::add_child_by_path( $table_root, $table, $path);
+      }
+    }
   }
 }
 
@@ -223,7 +241,7 @@ sub proc_table{
     my $name = AST::get_child( $child, "Name" );
     my $field;
     if( $name ) {
-      $field = AST::create_node( ${$name}{value}, "" );
+      $field = AST::create_node( ${$name}{value}, "v" );
     }else {
       #$field = AST::create_node( "$idx", "");
       $idx++;
@@ -235,6 +253,37 @@ sub proc_table{
     }
     AST::add_child( $var_root, $field ) if $field;
   }
+}
+
+sub proc_self_to_class{ # target : funcbody
+  my $node = shift; 
+  my $class = shift;
+  for my $child ( @{${$node}{child}} ){
+    if( $$child{name} eq "Name" && $$child{value} eq "self" ){
+      $$child{value} = $class;
+    }
+    proc_self_to_class( $child, $class );
+  }
+}
+
+sub proc_function{
+  my $node = shift;
+  my $funcname = AST::get_child( $node, "Funcname" );
+  my $class = AST::get_child( $node, "Funcname/Class" );
+  my $block_end = get_blockend( $node );
+  my $name;
+  if( $class ) {
+    proc_self_to_class( $node, $$class{value} );
+    my $table_path = $$class{value}; 
+    my $table = AST::create_node( $$funcname{value}, "f"); 
+    AST::add_child_by_path( $table_root, $table, $table_path );
+    $name = $$class{value} . ":" . $$funcname{value};
+  }else {
+    $name = $$funcname{value};
+  }
+  my @var = ($name, "f", [${$funcname}{line}, $block_end]);
+  push( @{$var_table{ $var[0] }}, \@var);
+  return;
 }
 
 sub proc_local{
@@ -263,7 +312,7 @@ sub proc_local{
       ${$name}[1] = "t";
       $block_end = get_blockend( $child );
       ${$name}[2][1] = $block_end;
-      my $table = AST::create_node( ${$name}[0], ""); 
+      my $table = AST::create_node( ${$name}[0], "v"); 
       proc_table( AST::get_child( $child, "Exp#" . $i ), $table );
       AST::add_child( $table_root, $table );
     }
@@ -292,17 +341,19 @@ sub ast_tree_dump {
   my $print_func = shift( @_ );
   my $prefix = shift( @_ );
   my $value = ${$root}{value};
-#  print $prefix . ${$root}{name} . ": ";
-#  if ( $value ) {
-#    $print_func->( ${$root}{value} );
-#  }
-#  print "\t___[" . ${$root}{line};
-#  print "]\n";
+  print $prefix . ${$root}{name} . ": ";
+  if ( $value ) {
+    $print_func->( ${$root}{value} );
+  }
+  print "\t___[" . ${$root}{line};
+  print "]\n";
   for my $child( @{${$root}{child}} ){
     if( ${$child}{name} eq "Assignment" ) {
       proc_assignment( $child );
     }elsif( ${$child}{name} eq "Local" ) {
       proc_local( $child );
+    }elsif( $$child{name} eq "Function" ) {
+      proc_function( $child );
     }
     ast_tree_dump( $child, $print_func, $prefix . "  "  );
   }
@@ -736,7 +787,8 @@ my %keywords = (
   "then" => 1,
   "true" => 1,
   "until" => 1,
-  "while" => 1
+  "while" => 1,
+  "goto" => 1,
 );
 
 sub create_token{
@@ -838,14 +890,6 @@ sub parser_tokenizer{
 
   {
     return undef if not defined (my $ch = shift(@$as));
-    if( $ch eq "-" ) {
-      my $peek = $ch . ${$as}[0];
-      if( $peek eq "--" ){ #comment
-        my @dummy = ();
-        @$as = @dummy;
-        return undef;
-      }
-    }
     if( $ch =~ /[a-zA-Z_]/){
       %token = scan_name($ch, $as);
     }
@@ -937,6 +981,10 @@ sub parser_comment{
       next;
     }
     last if $str eq "--[[";
+    if( $str =~ /^--/ ) { # --[
+      @$as = ();
+      next;
+    }
     while( defined( $ch = pop( @block_seq ) ) ){
       unshift( @$as, $ch );
     }
@@ -954,7 +1002,7 @@ sub parser_comment{
   while( 1 ){
     next if( not defined( $ch = shift( @$as ) ) );
     my $num_of_seq = @block_seq;
-    if( $num_of_seq == 4) {
+    if( $num_of_seq == 4) { # a <-- b c d <-- e
       shift( @block_seq );
     }
     push( @block_seq, $ch );
@@ -1024,9 +1072,10 @@ sub parser_ungetToken{
 
   stat_pop( $parser ) if %$token{name};
   # if name == "Name", "Number", "String" then unshift value.
-  if ($name eq "Name" || $name eq "Number" || $name eq "String") {
+  if ($name eq "Name" || $name eq "Number" || $name eq "String" ) {
     @arr = split(//, $value . " ");
   } else {
+    $name = "::" if $name eq "label";
     @arr = split(//, $name . " ");
   }
   unshift(@$as, @arr);
@@ -1043,9 +1092,10 @@ sub parser_ungetAllToken{
     my $value = %$token{value};
     my @arr=();
     if ($name eq "Name" || $name eq "Number" || $name eq "String") {
-      @arr = split(//, $value);
+      @arr = split(//, $value . " ");
     } else {
-      @arr = split(//, $name);
+      $name = "::" if $name eq "label";
+      @arr = split(//, $name. " ");
     }
     unshift(@$as, @arr);
   }
@@ -1198,8 +1248,7 @@ sub parser_do{
 
 sub parser_function {
   my $parser = shift(@_);
-  my $token = parser_getToken($parser); # remove 'function' 
-  stat_pop( $parser );
+  parser_expect( $parser, "function" );
   parser_func_wraper( $parser, Parser_Funcname );
   parser_func_wraper( $parser, Parser_Funcbody );
   parser_func_wraper( $parser, Parser_End );
@@ -1237,12 +1286,15 @@ BEGIN {
       if ( $state == Parser_Funcname );
     $name = %$token{name};
     if( $name eq ":" ) { # ':'Name
+      stat_pop( $parser); # remove ':'
+      parser_func_wraper( $parser, Parser_Class );
       $token = parser_getToken($parser); 
       parser_error $parser,  "syntax error: Invalid function name\n"
         if ( %$token{name} ne "Name");
     } else {
       parser_ungetToken( $parser, $token );
     }
+    return Parser_Funcname;
   }
 }
 
@@ -1293,6 +1345,7 @@ BEGIN{
     for => Parser_For,
     repeat => Parser_Repeat,
     label => Parser_Label,
+    goto => Parser_Goto,
   );
   sub parser_stat_decision {
     my $parser = shift(@_);
@@ -1329,6 +1382,14 @@ sub parser_name{
   return Parser_Name;
 }
 
+sub parser_class{
+  my $parser = shift;
+  my $token = parser_getToken( $parser );
+  parser_error $parser, "syntax error : Invalid Name\n" 
+    unless ${$token}{name} eq "Name";
+  return Parser_Class;
+}
+
 sub parser_simpexp{
   my $parser = shift;
   my $token = parser_getToken( $parser );
@@ -1358,8 +1419,7 @@ sub parser_break{
 
 sub parser_label{
   my $parser = shift;
-  my $token = parser_getToken( $parser );
-  stat_pop( $parser ); # delete 'label'
+  parser_expect( $parser, "label");
   parser_func_wraper( $parser, Parser_Name );
   parser_expect( $parser, "label" );
   return Parser_Label;
@@ -1373,6 +1433,13 @@ sub parser_return{
     unless ${$token}{name} eq "return";
   parser_func_wraper( $parser, Parser_Explist );
   return Parser_Return;
+}
+
+sub parser_goto{
+  my $parser = shift;
+  parser_expect( $parser, "goto");
+  parser_func_wraper( $parser, Parser_Name);
+  return Parser_Goto;
 }
 
 sub parser_func_wraper{
@@ -1456,7 +1523,8 @@ sub tree_print {
 sub dump_table_tree{
   my $root = shift(@_);
   my $prefix = shift( @_ );
-  print $prefix . ${$root}{name} . "\n";
+  printf( "%s%-25s%s\n", $prefix, ${$root}{name},  ${$root}{value} ); 
+  #print $prefix . ${$root}{name} . "\t". ${$root}{value} . "\n";
   for my $child( @{${$root}{child}} ){
     print $prefix . "|_"  . "\n";
     dump_table_tree( $child, $prefix . "  "  );
@@ -1465,10 +1533,10 @@ sub dump_table_tree{
 
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
-#my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
+my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
 #my $filename = "test.lua";
 #my $filename = "../lua/exviewer/exviewer.lua";
-my $filename = "../lua/exviewer/plterm/plterm.lua";
+#my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
 my @stat = ();
 
@@ -1480,9 +1548,10 @@ my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
 ast_tree_dump( $root, \&tree_print, "" );
-#dump_assign_table();
-dump_var_table();
-#dump_table_tree( $table_root, "" );
+proc_assign_table_member();
+dump_assign_table();
+#dump_var_table();
+dump_table_tree( $table_root, "" );
 
 close($fh);
 

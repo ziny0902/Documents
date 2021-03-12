@@ -31,6 +31,7 @@ parentheses_check	test.pl	/^sub parentheses_check {$/;"	s
 parser_args	test.pl	/^sub parser_args{$/;"	s
 parser_assignment	test.pl	/^sub parser_assignment {$/;"	s
 parser_break	test.pl	/^sub parser_break{$/;"	s
+parser_class	test.pl	/^sub parser_class{$/;"	s
 parser_comment	test.pl	/^sub parser_comment{$/;"	s
 parser_create	test.pl	/^sub parser_create{$/;"	s
 parser_do	test.pl	/^sub parser_do{$/;"	s
@@ -47,6 +48,7 @@ parser_funcname	test.pl	/^  sub parser_funcname {$/;"	s
 parser_function	test.pl	/^sub parser_function {$/;"	s
 parser_functioncall	test.pl	/^sub parser_functioncall {$/;"	s
 parser_getToken	test.pl	/^sub parser_getToken{$/;"	s
+parser_goto	test.pl	/^sub parser_goto{$/;"	s
 parser_if	test.pl	/^sub parser_if {$/;"	s
 parser_label	test.pl	/^sub parser_label{$/;"	s
 parser_local	test.pl	/^sub parser_local {$/;"	s
@@ -68,11 +70,13 @@ parser_util	test.pl	/^sub parser_util {$/;"	s
 parser_varlist	test.pl	/^sub parser_varlist{$/;"	s
 parser_while	test.pl	/^sub parser_while {$/;"	s
 print_parser_state	test.pl	/^sub print_parser_state{$/;"	s
+proc_assign_table_member	test.pl	/^sub proc_assign_table_member{$/;"	s
 proc_assignment	test.pl	/^sub proc_assignment{$/;"	s
 proc_function	test.pl	/^sub proc_function{$/;"	s
 proc_is_funcdef	test.pl	/^sub proc_is_funcdef{$/;"	s
 proc_is_table	test.pl	/^sub proc_is_table{$/;"	s
 proc_local	test.pl	/^sub proc_local{$/;"	s
+proc_self_to_class	test.pl	/^sub proc_self_to_class{ # target : funcbody$/;"	s
 proc_table	test.pl	/^sub proc_table{$/;"	s
 register_variable	test.pl	/^sub register_variable{$/;"	s
 scan_name	test.pl	/^sub scan_name{$/;"	s
