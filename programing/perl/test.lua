@@ -1,105 +1,139 @@
-str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
-local cmd_result = tostring((ls ("-l " .. path) : awk (action) ))
---
--- assignment test suit
---
-fact = function (n)
-      if n == 0 then return 1
-      else return n*fact(n-1)
-      end
-    end
-d , f = 5, 10
-result = math.sqrt(sum / (count-1))
---
--- table test suit
---
-tab = {sin(1), sin(2), sin(3), sin(4),
-     sin(5), sin(6), sin(7), sin(8)}
-intervals={
-  {"seconds",1}, --the "1" should never really get used but
-  {"minutes",60},
-  {"hours",60},
-  {"days",24},
+term.keys = { -- key code definitions
+	unknown = 0x10000,-- 0ff 
+	esc = 0x1b, 
+	del = 0x7f, 
+	kf1 = 0xffff,  
+	kf2 = 0xfffe,  
+	kf3 = 0xfffd,  -- ...
+	kf4 = 0xfffc,
+	kf5 = 0xfffb, --[[
+	kf6 = 0xfffa, --]]
+	kf7 = 0xfff9,
+	kf8 = 0xfff8,
+	kf9 = 0xfff7,
+	kf10 = 0xfff6,
+	kf11 = 0xfff5,
+	kf12 = 0xfff4,
+	kins  = 0xfff3,
+	kdel  = 0xfff2,
+	khome = 0xfff1,
+	kend  = 0xfff0,
+	kpgup = 0xffef,
+	kpgdn = 0xffee,
+	kup   = 0xffed,
+	kdown = 0xffec,
+	kleft = 0xffeb,
+	kright = 0xffea,
 }
-polyline = {color="blue", thickness=2, npoints=4, 
-               {x=0,   y=0},
-               {x=-10, y=0},
-               {x=-10, y=1},
-               {x=0,   y=1}
-             };
-opnames = {["+"] = "add", ["-"] = "sub",
-               ["*"] = "mul", ["/"] = "div"}
-a = {[i+0] = s, [i+1] = s..s, [i+2] = s..s..s}
-days = {[0]="Sunday", "Monday", "Tuesday", "Wednesday",
-            "Thursday", "Friday", "Saturday"}
+local table1= { -- comment test
+  a = 0xffff,
+  b = 0xfffe, -- adfjaldks
+  3, -- adfalkfjal
+  c = { a = 1, b =2 }, -- adlfjalkf
+  4
+}
+--str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
+--local cmd_result = tostring((ls ("-l " .. path) : awk (action) ))
+----
+---- assignment test suit
+----
+--fact = function (n)
+--      if n == 0 then return 1
+--      else return n*fact(n-1)
+--      end
+--    end
+--d , f = 5, 10
+--result = math.sqrt(sum / (count-1))
+----
+---- table test suit
+----
+--tab = {sin(1), sin(2), sin(3), sin(4),
+--     sin(5), sin(6), sin(7), sin(8)}
+--intervals={
+--  {"seconds",1}, --the "1" should never really get used but
+--  {"minutes",60},
+--  {"hours",60},
+--  {"days",24},
+--}
+--polyline = {color="blue", thickness=2, npoints=4, 
+--               {x=0,   y=0},
+--               {x=-10, y=0},
+--               {x=-10, y=1},
+--               {x=0,   y=1}
+--             };
+--opnames = {["+"] = "add", ["-"] = "sub",
+--               ["*"] = "mul", ["/"] = "div"}
+--a = {[i+0] = s, [i+1] = s..s, [i+2] = s..s..s}
+--days = {[0]="Sunday", "Monday", "Tuesday", "Wednesday",
+--            "Thursday", "Friday", "Saturday"}
+----
+---- function call test suit
+----
+--split("a,b,c", ",") 
+--tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
+--string.gmatch(example, "%S+") 
+--awful.spawn.with_shell("picom --backend glx --vsync")
+----awful.spawn.with_shell("picom backend glx vsync")
+----
+---- local assignmeent test suit
+----
+--local  term = require "plterm"
+--local sourcei, targeti = positions[sourceunits], positions[targetunits]
+--local start, finish, inc = tonumber(arg[1]), tonumber(arg[2]), tonumber(arg[3])
+--local fact = function (n)
+--  if n == 0 then return 1
+--  else return n*fact(n-1)   -- buggy
+--  end
+--end
+----
+---- function test suit
+----
+--local function fact (n)
+--      if n == 0 then return 1
+--      else return n*fact(n-1)
+--      end
+--    end
+--function Lib.foo (x,y)
+--      return x + y
+--    end
+--f = function ()
+--return "x", "y", "z" -- return 3 values
+--end
+----
+---- while loop test suit
+----
+--while a[i] do
+--  print(a[i])
+--  i = i + 1
+--end
+--while ( useranswer ~= answer ) do
+--	io.write( "What is 3 + 2? " )
+--	useranswer = io.read()
+--end
+----
+---- for loop test suit
+----
+--for i,v in ipairs( x_values ) do
+--  x_values[i] = math.log( v )
+--  y_values[i] = math.log( y_values[i] )
+--end
 --
--- function call test suit
+--for Key,Kyp,Val,Vyp
+-- in lp.db:urows("SELECT Key,Kyp,Val,Vyp FROM luat where TID='tid1'")
+-- do print(Key, Kyp, Val, Vyp) end
 --
-split("a,b,c", ",") 
-tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
-string.gmatch(example, "%S+") 
-awful.spawn.with_shell("picom --backend glx --vsync")
---awful.spawn.with_shell("picom backend glx vsync")
+--for i = 1,width do
+--  num,rem = math.modf(num/2)
+--  fl[#fl+1] = rem>=0.5
+--end
 --
--- local assignmeent test suit
+--for i=1,a.n do
+--  if a[i] == value then
+--    found = i      -- save value of `i'
+--    break
+--  end
+--end
 --
-local  term = require "plterm"
-local sourcei, targeti = positions[sourceunits], positions[targetunits]
-local start, finish, inc = tonumber(arg[1]), tonumber(arg[2]), tonumber(arg[3])
-local fact = function (n)
-  if n == 0 then return 1
-  else return n*fact(n-1)   -- buggy
-  end
-end
---
--- function test suit
---
-local function fact (n)
-      if n == 0 then return 1
-      else return n*fact(n-1)
-      end
-    end
-function Lib.foo (x,y)
-      return x + y
-    end
-f = function ()
-return "x", "y", "z" -- return 3 values
-end
---
--- while loop test suit
---
-while a[i] do
-  print(a[i])
-  i = i + 1
-end
-while ( useranswer ~= answer ) do
-	io.write( "What is 3 + 2? " )
-	useranswer = io.read()
-end
---
--- for loop test suit
---
-for i,v in ipairs( x_values ) do
-  x_values[i] = math.log( v )
-  y_values[i] = math.log( y_values[i] )
-end
-
-for Key,Kyp,Val,Vyp
- in lp.db:urows("SELECT Key,Kyp,Val,Vyp FROM luat where TID='tid1'")
- do print(Key, Kyp, Val, Vyp) end
-
-for i = 1,width do
-  num,rem = math.modf(num/2)
-  fl[#fl+1] = rem>=0.5
-end
-
-for i=1,a.n do
-  if a[i] == value then
-    found = i      -- save value of `i'
-    break
-  end
-end
-
 --
 -- repeat loop test suit
 --

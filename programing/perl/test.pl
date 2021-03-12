@@ -6,10 +6,12 @@ use enum qw(
     Explist Assignment Function Functioncall Tableconstructor Local 
     Field Transition If Do While Repeat For Break Funcbody
     Paralist Arbitrary Funcname Return String End Unopexp 
-    Simpexp Block Op Util Error 
+    Simpexp Block Op Util Label Error 
 );
 
 use AST;
+
+my $table_root = AST::create_node("Table", "");
 
 my @state_name_table = ();
 $state_name_table[Parser_Stat] = "Stat";
@@ -43,6 +45,7 @@ $state_name_table[Parser_Simpexp] = "Simpexp";
 $state_name_table[Parser_Field] = "Field";
 $state_name_table[Parser_Unopexp] = "exp";
 $state_name_table[Parser_Util] = "Util";
+$state_name_table[Parser_Label] = "Label";
 
 my @state_func_map=();
 $state_func_map[Parser_Var] = \&parser_var;
@@ -73,6 +76,7 @@ $state_func_map[Parser_Return] = \&parser_return;
 $state_func_map[Parser_Break] = \&parser_break;
 $state_func_map[Parser_Op] = \&parser_op;
 $state_func_map[Parser_Util] = \&parser_util;
+$state_func_map[Parser_Label] = \&parser_label;
 $state_func_map[Parser_End] = \&parser_end;
 
 my %parentheses_pair = (
@@ -207,6 +211,32 @@ sub proc_is_table{
   }
 }
 
+sub proc_table{
+  my $node = shift; #Exp
+  my $var_root = shift;
+  my $table_node = AST::get_child( $node, "Tableconstructor" ); # Exp/Tableconstructor
+  # field traverse
+  my $idx = 0;
+  for( my $i = 0;  ; $i++ ){
+    my $child = AST::get_child( $table_node, "Field#" . $i );  # Exp/Tableconstructor/Field
+    last unless( $child );
+    my $name = AST::get_child( $child, "Name" );
+    my $field;
+    if( $name ) {
+      $field = AST::create_node( ${$name}{value}, "" );
+    }else {
+      #$field = AST::create_node( "$idx", "");
+      $idx++;
+    }
+    my $nest_table = AST::get_child( $child, "Exp/Tableconstructor" );
+    if( $nest_table ) {
+      $child = AST::get_child( $child, "Exp" );
+      proc_table( $child, $field );
+    }
+    AST::add_child( $var_root, $field ) if $field;
+  }
+}
+
 sub proc_local{
   my $node = shift;
   my $parent = ${$node}{parent};
@@ -233,6 +263,9 @@ sub proc_local{
       ${$name}[1] = "t";
       $block_end = get_blockend( $child );
       ${$name}[2][1] = $block_end;
+      my $table = AST::create_node( ${$name}[0], ""); 
+      proc_table( AST::get_child( $child, "Exp#" . $i ), $table );
+      AST::add_child( $table_root, $table );
     }
     push( @{$var_table{ ${$name}[0] }}, $name );
     $i++;
@@ -259,12 +292,12 @@ sub ast_tree_dump {
   my $print_func = shift( @_ );
   my $prefix = shift( @_ );
   my $value = ${$root}{value};
-#  print $prefix . ${$root}{name} . ": ";
-#  if ( $value ) {
-#    $print_func->( ${$root}{value} );
-#  }
-#  print "\t___[" . ${$root}{line};
-#  print "]\n";
+  print $prefix . ${$root}{name} . ": ";
+  if ( $value ) {
+    $print_func->( ${$root}{value} );
+  }
+  print "\t___[" . ${$root}{line};
+  print "]\n";
   for my $child( @{${$root}{child}} ){
     if( ${$child}{name} eq "Assignment" ) {
       proc_assignment( $child );
@@ -411,7 +444,6 @@ BEGIN{
     "or" => 1,
   );
   sub parser_exp{
-    # print "parser_exp " . __LINE__ . "\n";
     my $parser= shift;
     my $state = shift;
     my $token;
@@ -441,11 +473,9 @@ BEGIN{
         parser_func_wraper( $parser, Parser_Op );
         next;
       }
-      #print __LINE__ . " " . %$token{name} . " not biop\n";
       parser_ungetToken( $parser, $token );
       last;
     }
-    #print "parser_exp end " . __LINE__ . "\n";
     return Parser_Exp;
   }
 }
@@ -494,7 +524,6 @@ sub parser_explist{
   my $state = shift(@_);
   my $token;
   my $name;
-  #print "parser_explist " . __LINE__ . "\n";
   do {
     parser_func_wraper($parser, Parser_Unopexp);
     $token = parser_getToken($parser);
@@ -502,7 +531,6 @@ sub parser_explist{
     $name = %$token{name};
     stat_pop( $parser );
   }while( $name eq ",");
-  #print "parser_explist " . __LINE__ . " end\n";
 
   parser_ungetToken( $parser, $token );
   return Parser_Explist;
@@ -558,23 +586,17 @@ BEGIN{
     "." => Parser_Var,
     "[" => Parser_Unopexp,
   };
-  #TODO
   sub parser_prefixexp{
-    #print "parser_prefixexp " . __LINE__ . "\n";
     my $parser = shift(@_);
     my $state = shift(@_);
     my $token;
     while( $token = parser_getToken($parser) ) {
       my $name = %$token{name};
       if( not defined ($transition[$state]{$name}) ){
-        # print __LINE__ . " $state $name\n";
         parser_ungetToken( $parser, $token );
         last;
       }
       $state = $transition[$state]{$name};
-      #print __LINE__ . " $name\n";
-      #print __LINE__ . " ";
-      #print_parser_state( $state );
       if ( $state == Parser_Functioncall) {
         parser_func_wraper( $parser, Parser_Name);
         parser_func_wraper( $parser, Parser_Args);
@@ -594,7 +616,6 @@ BEGIN{
     if ( $state == Parser_Name) {
       $state = Parser_Var;
     }
-    #print __LINE__ . "prefixexp end.\n";
     return $state;
   }
 }
@@ -605,7 +626,6 @@ sub parentheses_check {
   if ( my $pair = $parentheses_pair{$name} ) {
     my $token = parser_getToken($parser);
     $name = %$token{name};
-    #print __LINE__ . " $name\n";
     if( $name ne $pair ) {
       parser_error $parser, "\nparser error : '". $pair .  "' are missing.\n";
     }
@@ -655,7 +675,6 @@ sub parser_tableconstructor{
   last if %$token{name} ne "{";
   do {
     stat_pop( $parser ); # remove '{', ';', ','
-    # parser_field( $parser );
     parser_func_wraper( $parser, Parser_Field );
     $token = parser_getToken($parser)
   }while( ( %$token{name} eq ";" ) || ( %$token{name} eq "," ) );
@@ -683,8 +702,8 @@ sub parser_field {
     $name = %$token{name};
     # Name '=' exp
     if ( $name eq "=" ) {
-      #print __LINE__ . "\n";
-      while ( stat_pop( $parser ) ) {} # remove Name '='
+      parser_func_wraper( $parser, Parser_Name);
+      parser_expect( $parser, "=" );
       parser_func_wraper( $parser, Parser_Unopexp );
       return Parser_Field;
     }else { # exp
@@ -788,12 +807,14 @@ sub scan_string{
 
 sub scan_op{
   my %multi_length_op = (
+    "..." => 1,
     ".." => 1,
     ">=" => 1,
     "<=" => 1,
     "==" => 1,
     "~=" => 1,
     "//" => 1,
+    "::" => 1,
   );
   my %token = create_token();
   $token{name} = shift(@_);
@@ -807,6 +828,7 @@ sub scan_op{
       last;
     } 
   }
+  $token{name} = "label" if( $token{name} eq "::" );
   return wantarray ? %token : die;
 }
 
@@ -819,27 +841,22 @@ sub parser_tokenizer{
     if( $ch eq "-" ) {
       my $peek = $ch . ${$as}[0];
       if( $peek eq "--" ){ #comment
-        while( shift(@$as) ){}
+        my @dummy = ();
+        @$as = @dummy;
         return undef;
       }
     }
     if( $ch =~ /[a-zA-Z_]/){
       %token = scan_name($ch, $as);
-      # print "$token{value}\n" if $token{name} eq "Name";
     }
     elsif( $ch =~ /[0-9]/){
       %token = scan_number($ch, $as);
-      # print $token{value};
-      # print "\n";
     }
     elsif( $ch =~ /["']/){
       %token = scan_string($ch, $as);
-      # print $token{value};
-      # print "\n";
     }
     elsif( $ch !~ /\s/ ){
       %token = scan_op($ch, $as);
-      # print "$token{name}\n";
     }
     else {
       redo;
@@ -868,25 +885,122 @@ sub parser_create{
   return \%parser;
 }
 
+sub parser_readline{
+  my $parser = shift(@_);
+  my $as = %$parser{as};
+  my $fh = %$parser{fh};
+  ${$parser}{line} = ${$parser}{line} + 1;
+  s/^\s+//;   # remove a leading whitespace
+  s/\s+$//;   # remove a tailing whitespace
+  s/^#!.*$//;  # remove a shell instruction
+  @$as = split(//, $_);
+}
+
+sub parser_comment{
+  my $parser = shift(@_);
+  my $as = %$parser{as};
+  my $fh = %$parser{fh};
+  my @block_seq = ();
+  my @pattern; 
+  my $ch;
+
+  my $str;
+  while(1){
+    if( $#$as < 0 ) {
+      return unless $_= <$fh>;
+      s/^\s+//;   # remove a leading whitespace
+      s/^#!.*$//;  # remove a shell instruction
+      ${$parser}{line} = ${$parser}{line} + 1;
+      @$as = split(//, $_);
+    }
+    while( defined( $ch =  shift( @$as ) ) ) { #remove leading space
+      if( not ($ch =~ /\s/) ) {
+        unshift( @$as, $ch );
+      }
+      last if $ch ne ' ';
+    }
+    next if $#$as < 0;
+
+    @pattern = ( '-', '-', '[', '[' );
+    @block_seq = ();
+    while( defined( $ch =  shift( @$as ) ) ) { # comment pattern matching
+      my $seq;
+      last if( not defined( $seq = shift(@pattern) ) );
+      if( $ch eq $seq ){
+        push( @block_seq, $ch );
+      }else {
+        unshift( @$as, $ch );
+      }
+      last if $ch ne $seq;
+    }
+
+    $str = join('', @block_seq );
+    if( $str eq "--" ) {
+      @$as = ();
+      next;
+    }
+    last if $str eq "--[[";
+    while( defined( $ch = pop( @block_seq ) ) ){
+      unshift( @$as, $ch );
+    }
+    return;
+  }
+  
+  if( $str ne "--[[" ) {
+    for $ch ( pop( @block_seq ) ) {
+      unshift( @$as, $ch );
+    }
+    return;
+  }
+
+  @block_seq = ();
+  while( 1 ){
+    next if( not defined( $ch = shift( @$as ) ) );
+    my $num_of_seq = @block_seq;
+    if( $num_of_seq == 4) {
+      shift( @block_seq );
+    }
+    push( @block_seq, $ch );
+    $str = join( '', @block_seq );
+    if( $str eq "--]]" ) {
+      return;
+    }else {
+      redo;
+    }
+  }
+  continue {
+    return unless $_ = <$fh>;
+    ${$parser}{line} = ${$parser}{line} + 1;
+    s/^\s+//;   # remove a leading whitespace
+    s/\s+$//;   # remove a tailing whitespace
+    s/^#!.*$//;  # remove a shell instruction
+    @$as = split(//, $_);
+    @block_seq = ();
+  }
+}
+
 # args : file handle
 # return : hash reference
 sub parser_getToken{
   my $parser = shift(@_);
   my $as = %$parser{as};
   my $fh = %$parser{fh};
+
+  parser_comment( $parser );
   if ( defined (my $ch = shift(@$as)) ) {
     unshift( @$as, $ch );
     my $token = parser_tokenizer($as); 
+    return parser_getToken( $parser ) unless $token;
     stat_push( $parser, $token );
     return $token;
   }
   return undef unless $fh;
   while (<$fh>) {
     ${$parser}{line} = ${$parser}{line} + 1;
-    s/^--.*$//;  # remove a comment
     s/^#!.*$//;  # remove a shell instruction
     s/^\s+//;   # remove a leading whitespace
     s/\s+$//;   # remove a tailing whitespace
+    s/^--.*$//;  # remove a comment
     next if length($_) == 0;
     @$as = split(//, $_);
     next unless ( my $token = parser_tokenizer($as) ); 
@@ -918,9 +1032,9 @@ sub parser_ungetToken{
   stat_pop( $parser ) if %$token{name};
   # if name == "Name", "Number", "String" then unshift value.
   if ($name eq "Name" || $name eq "Number" || $name eq "String") {
-    @arr = split(//, $value);
+    @arr = split(//, $value . " ");
   } else {
-    @arr = split(//, $name);
+    @arr = split(//, $name . " ");
   }
   unshift(@$as, @arr);
 }
@@ -1185,6 +1299,7 @@ BEGIN{
     do => Parser_Do,
     for => Parser_For,
     repeat => Parser_Repeat,
+    label => Parser_Label,
   );
   sub parser_stat_decision {
     my $parser = shift(@_);
@@ -1249,6 +1364,15 @@ sub parser_break{
   return Parser_Break;
 }
 
+sub parser_label{
+  my $parser = shift;
+  my $token = parser_getToken( $parser );
+  stat_pop( $parser ); # delete 'label'
+  parser_func_wraper( $parser, Parser_Name );
+  parser_expect( $parser, "label" );
+  return Parser_Label;
+}
+
 sub parser_return{
   my $parser = shift;
   my $token = parser_getToken( $parser );
@@ -1266,9 +1390,6 @@ sub parser_func_wraper{
   my $name = ${$token}{name};
   my $root = ${$parser}{root};
   my $value = ${$token}{value};
-  #print __LINE__ . " " . $state . " ";
-  #print_parser_state( $state );
-  #print __LINE__ . " wrapper [$name] [$value]\n";
   if( $name =~ /[\.\:]/ && $state == Parser_Name ){
    stat_push( $parser, $token ); 
    parser_func_wraper( $parser, Parser_Op );
@@ -1300,8 +1421,6 @@ sub parser_func_wraper{
   ######################
   ${$parser}{root} = $root; # swap the chid with the root
   ######################
-  #print __LINE__ . " " . $ret_state . " ";
-  #print_parser_state( $ret_state );
   ######################
   # AST: update a value of a child node
   ######################
@@ -1342,11 +1461,22 @@ sub tree_print {
   print $val;
 }
 
+sub dump_table_tree{
+  my $root = shift(@_);
+  my $prefix = shift( @_ );
+  print $prefix . ${$root}{name} . "\n";
+  for my $child( @{${$root}{child}} ){
+    print $prefix . "|_"  . "\n";
+    dump_table_tree( $child, $prefix . "  "  );
+  }
+}
+
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
 #my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
 #my $filename = "test.lua";
 my $filename = "../lua/exviewer/exviewer.lua";
+#my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
 my @stat = ();
 
@@ -1358,8 +1488,9 @@ my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
 ast_tree_dump( $root, \&tree_print, "" );
-#dump_assign_table();
+dump_assign_table();
 dump_var_table();
+dump_table_tree( $table_root, "" );
 
 close($fh);
 

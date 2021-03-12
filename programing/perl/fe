@@ -7,6 +7,6 @@ while true; do
     | awk -F '-' '{printf "%d,%dp\n", $1, $2}' \
     | ed -s /home/ziny/.config/awesome.RedFlat/color/blue/keys-config.lua \
     > tmp.lua 
-  [ -s tmp.lua ] &&  bat --pager "less -R" --tabs 2 tmp.lua || exit 1
+  [ -s tmp.lua ] &&  bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua || \rm tmp.lua;exit 1
   \rm tmp.lua
 done

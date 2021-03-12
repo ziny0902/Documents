@@ -3,6 +3,28 @@ use 5.32.0;
 
 use AST;
 
+sub ast_tree_dump {
+  my $root = shift(@_);
+  my $prefix = shift( @_ );
+  print $prefix . ${$root}{name} . "\n ";
+  for my $child( @{${$root}{child}} ){
+    ast_tree_dump( $child, $prefix . "  "  );
+  }
+}
+
+my $root = AST::create_node("root", "");
+my $child = AST::create_node( "leaf0", "" );
+AST::add_child_by_path( $root, $child, "child/grand_child0" );
+$child = AST::create_node( "leaf1", "" );
+AST::add_child_by_path( $root, $child, "child/grand_child1" );
+$child = AST::create_node( "grand child", "" );
+AST::add_child_by_path( $root, $child, "child" );
+$child = AST::create_node( "leaf", "" );
+AST::add_child_by_path( $root, $child, "child/grand child#2" );
+AST::add_child_by_path( $root, $child, "child/grand child#0" );
+ast_tree_dump( $root, "" );
+
+
 my @c = ( 1, 2, 3, 4 );
 my @d = ( 1, 2, 3, 4, 5, 6, 7, 8 );
 
