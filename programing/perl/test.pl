@@ -292,12 +292,12 @@ sub ast_tree_dump {
   my $print_func = shift( @_ );
   my $prefix = shift( @_ );
   my $value = ${$root}{value};
-  print $prefix . ${$root}{name} . ": ";
-  if ( $value ) {
-    $print_func->( ${$root}{value} );
-  }
-  print "\t___[" . ${$root}{line};
-  print "]\n";
+#  print $prefix . ${$root}{name} . ": ";
+#  if ( $value ) {
+#    $print_func->( ${$root}{value} );
+#  }
+#  print "\t___[" . ${$root}{line};
+#  print "]\n";
   for my $child( @{${$root}{child}} ){
     if( ${$child}{name} eq "Assignment" ) {
       proc_assignment( $child );
@@ -908,16 +908,13 @@ sub parser_comment{
   while(1){
     if( $#$as < 0 ) {
       return unless $_= <$fh>;
-      s/^\s+//;   # remove a leading whitespace
-      s/^#!.*$//;  # remove a shell instruction
-      ${$parser}{line} = ${$parser}{line} + 1;
-      @$as = split(//, $_);
+      parser_readline( $parser );
     }
     while( defined( $ch =  shift( @$as ) ) ) { #remove leading space
       if( not ($ch =~ /\s/) ) {
         unshift( @$as, $ch );
+        last;
       }
-      last if $ch ne ' ';
     }
     next if $#$as < 0;
 
@@ -930,8 +927,8 @@ sub parser_comment{
         push( @block_seq, $ch );
       }else {
         unshift( @$as, $ch );
+        last;
       }
-      last if $ch ne $seq;
     }
 
     $str = join('', @block_seq );
@@ -944,9 +941,9 @@ sub parser_comment{
       unshift( @$as, $ch );
     }
     return;
-  }
+  } # while loop
   
-  if( $str ne "--[[" ) {
+  if( $str ne "--[[" ) { # if not block comment
     for $ch ( pop( @block_seq ) ) {
       unshift( @$as, $ch );
     }
@@ -970,11 +967,7 @@ sub parser_comment{
   }
   continue {
     return unless $_ = <$fh>;
-    ${$parser}{line} = ${$parser}{line} + 1;
-    s/^\s+//;   # remove a leading whitespace
-    s/\s+$//;   # remove a tailing whitespace
-    s/^#!.*$//;  # remove a shell instruction
-    @$as = split(//, $_);
+    parser_readline( $parser );
     @block_seq = ();
   }
 }
@@ -997,9 +990,9 @@ sub parser_getToken{
   return undef unless $fh;
   while (<$fh>) {
     ${$parser}{line} = ${$parser}{line} + 1;
-    s/^#!.*$//;  # remove a shell instruction
     s/^\s+//;   # remove a leading whitespace
     s/\s+$//;   # remove a tailing whitespace
+    s/^#!.*$//;  # remove a shell instruction
     s/^--.*$//;  # remove a comment
     next if length($_) == 0;
     @$as = split(//, $_);
@@ -1325,7 +1318,6 @@ BEGIN{
     parser_func_wraper( $parser, $state );
     return $state;
   }
-
 }
 
 sub parser_name{
@@ -1475,8 +1467,8 @@ use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
 #my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
 #my $filename = "test.lua";
-my $filename = "../lua/exviewer/exviewer.lua";
-#my $filename = "../lua/exviewer/plterm/plterm.lua";
+#my $filename = "../lua/exviewer/exviewer.lua";
+my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
 my @stat = ();
 
@@ -1488,9 +1480,9 @@ my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
 ast_tree_dump( $root, \&tree_print, "" );
-dump_assign_table();
+#dump_assign_table();
 dump_var_table();
-dump_table_tree( $table_root, "" );
+#dump_table_tree( $table_root, "" );
 
 close($fh);
 

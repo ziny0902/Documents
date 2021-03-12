@@ -31,6 +31,7 @@ parentheses_check	test.pl	/^sub parentheses_check {$/;"	s
 parser_args	test.pl	/^sub parser_args{$/;"	s
 parser_assignment	test.pl	/^sub parser_assignment {$/;"	s
 parser_break	test.pl	/^sub parser_break{$/;"	s
+parser_comment	test.pl	/^sub parser_comment{$/;"	s
 parser_create	test.pl	/^sub parser_create{$/;"	s
 parser_do	test.pl	/^sub parser_do{$/;"	s
 parser_end	test.pl	/^sub parser_end{$/;"	s
@@ -47,12 +48,14 @@ parser_function	test.pl	/^sub parser_function {$/;"	s
 parser_functioncall	test.pl	/^sub parser_functioncall {$/;"	s
 parser_getToken	test.pl	/^sub parser_getToken{$/;"	s
 parser_if	test.pl	/^sub parser_if {$/;"	s
+parser_label	test.pl	/^sub parser_label{$/;"	s
 parser_local	test.pl	/^sub parser_local {$/;"	s
 parser_name	test.pl	/^sub parser_name{$/;"	s
 parser_namelist	test.pl	/^sub parser_namelist{$/;"	s
 parser_op	test.pl	/^sub parser_op{$/;"	s
 parser_paralist	test.pl	/^  sub parser_paralist{$/;"	s
 parser_prefixexp	test.pl	/^  sub parser_prefixexp{$/;"	s
+parser_readline	test.pl	/^sub parser_readline{$/;"	s
 parser_repeat	test.pl	/^sub parser_repeat {$/;"	s
 parser_return	test.pl	/^sub parser_return{$/;"	s
 parser_simpexp	test.pl	/^sub parser_simpexp{$/;"	s
