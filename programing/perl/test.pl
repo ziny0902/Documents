@@ -359,6 +359,27 @@ sub ast_tree_dump {
   }
 }
 
+sub ast2json {
+  my $root = shift(@_);
+  my $value = ${$root}{value};
+  print "{ \"Name\": \"" . ${$root}{name} . "\", ";
+  if ( $value ) {
+    $value =~ s/\\/\\\\/g;
+    $value =~ s/"/\\"/g;
+    print "\"Value\":\"" . $value . "\", ";
+  }
+  print "\"Line\": " . ${$root}{line} . ", ";
+  print "\"Child\": [\n";
+  my $i = 0;
+  for my $child( @{${$root}{child}} ){
+    last if not defined $child;
+    print "," if $i > 0;
+    ast2json( $child ); 
+    $i++;
+  }
+  print "\n]}";
+}
+
 # store a statement
 BEGIN {
   my %literal = (
@@ -516,6 +537,7 @@ BEGIN{
       parser_func_wraper( $parser, $state );
       if( $state == Parser_Funcbody ){
         parser_func_wraper( $parser, Parser_End );
+        last;
       }
       $state = Parser_Unopexp;
       $token = parser_getToken($parser);
@@ -527,7 +549,7 @@ BEGIN{
       parser_ungetToken( $parser, $token );
       last;
     }
-    AST::rearrange_ast2exp( ${$parser}{root} );
+    AST::rearrange_ast2exp( ${$parser}{root} ) if $state == Parser_Unopexp;
     return Parser_Exp;
   }
 }
@@ -602,6 +624,7 @@ sub parser_functioncall {
     parser_func_wraper( $parser, Parser_Args);
   } else {
     parser_ungetToken( $parser, $token );
+    parser_func_wraper( $parser, Parser_Args);
   }
   return Parser_Functioncall;
 }
@@ -1405,10 +1428,7 @@ sub parser_op{
 }
 sub parser_end{
   my $parser = shift;
-  my $token = parser_getToken( $parser );
-  parser_error $parser, "syntax error : 'end' is expected\n" 
-    unless ${$token}{name} eq "end";
-  stat_pop( $parser );
+  parser_expect( $parser, "end");
   return Parser_End;
 }
 
@@ -1555,10 +1575,13 @@ if ( my $token = parser_getToken( $parser ) ){
 }
 
 ast_tree_dump( $root, \&tree_print, "" );
-proc_assign_table_member();
-#dump_assign_table();
-dump_var_table();
-dump_table_tree( $table_root, "" );
+#proc_assign_table_member();
+##dump_assign_table();
+#dump_var_table();
+#dump_table_tree( $table_root, "" );
+
+#ast2json( $root );
+print "\n";
 
 close($fh);
 

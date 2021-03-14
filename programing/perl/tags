@@ -14,6 +14,7 @@ add_child	AST.pm	/^sub add_child {$/;"	s
 add_child_by_path	AST.pm	/^sub add_child_by_path{$/;"	s
 add_exp_node	AST.pm	/^sub add_exp_node{$/;"	s
 add_neighbor	AST.pm	/^sub add_neighbor {$/;"	s
+ast2json	test.pl	/^sub ast2json {$/;"	s
 ast_tree_dump	test.pl	/^sub ast_tree_dump {$/;"	s
 create_node	AST.pm	/^sub create_node {$/;"	s
 create_path	AST.pm	/^sub create_path{$/;"	s

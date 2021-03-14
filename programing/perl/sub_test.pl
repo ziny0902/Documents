@@ -77,3 +77,7 @@ push ( @{$hash{b}}, 7 );
 my $hash_arr = $hash{a};
 print @$hash_arr;
 print "\n";
+
+my $str = "\" adsfads \"";
+$str =~ s/"/\\"/g;
+print $str . "\n";
