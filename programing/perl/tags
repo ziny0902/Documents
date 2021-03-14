@@ -12,6 +12,7 @@
 AST	AST.pm	/^package AST;$/;"	p
 add_child	AST.pm	/^sub add_child {$/;"	s
 add_child_by_path	AST.pm	/^sub add_child_by_path{$/;"	s
+add_exp_node	AST.pm	/^sub add_exp_node{$/;"	s
 add_neighbor	AST.pm	/^sub add_neighbor {$/;"	s
 ast_tree_dump	test.pl	/^sub ast_tree_dump {$/;"	s
 create_node	AST.pm	/^sub create_node {$/;"	s
@@ -25,8 +26,10 @@ dump_var_table	test.pl	/^sub dump_var_table{$/;"	s
 get_blockend	test.pl	/^sub get_blockend{$/;"	s
 get_child	AST.pm	/^sub get_child{$/;"	s
 get_namelist	test.pl	/^sub get_namelist{$/;"	s
+get_priority	AST.pm	/^sub get_priority{$/;"	s
 get_varlist	test.pl	/^sub get_varlist{$/;"	s
 get_varname	test.pl	/^sub get_varname {$/;"	s
+left_op	AST.pm	/^sub left_op{$/;"	s
 parentheses_check	test.pl	/^sub parentheses_check {$/;"	s
 parser_args	test.pl	/^sub parser_args{$/;"	s
 parser_assignment	test.pl	/^sub parser_assignment {$/;"	s
@@ -78,7 +81,9 @@ proc_is_table	test.pl	/^sub proc_is_table{$/;"	s
 proc_local	test.pl	/^sub proc_local{$/;"	s
 proc_self_to_class	test.pl	/^sub proc_self_to_class{ # target : funcbody$/;"	s
 proc_table	test.pl	/^sub proc_table{$/;"	s
+rearrange_ast2exp	AST.pm	/^sub rearrange_ast2exp{$/;"	s
 register_variable	test.pl	/^sub register_variable{$/;"	s
+right_op	AST.pm	/^sub right_op{$/;"	s
 scan_name	test.pl	/^sub scan_name{$/;"	s
 scan_number	test.pl	/^sub scan_number {$/;"	s
 scan_op	test.pl	/^sub scan_op{$/;"	s

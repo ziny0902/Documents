@@ -527,6 +527,7 @@ BEGIN{
       parser_ungetToken( $parser, $token );
       last;
     }
+    AST::rearrange_ast2exp( ${$parser}{root} );
     return Parser_Exp;
   }
 }
@@ -1364,6 +1365,7 @@ BEGIN{
     }
     else {
        unless( $state = $stat_func_map{$name} ){
+         #         parser_error( $parser, "syntax error: Invalid statement " . $name );
         parser_ungetToken( $parser, $token );
         return Parser_End;
       }
@@ -1533,8 +1535,8 @@ sub dump_table_tree{
 
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
-my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
-#my $filename = "test.lua";
+#my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
+my $filename = "test.lua";
 #my $filename = "../lua/exviewer/exviewer.lua";
 #my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
@@ -1547,11 +1549,17 @@ $parser = parser_create( $fh );
 my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
+if ( my $token = parser_getToken( $parser ) ){
+  close($fh);
+  parser_error( $parser, "syntax error: Invalid statement [" . ${$token}{name} . "]" );
+}
+
 ast_tree_dump( $root, \&tree_print, "" );
 proc_assign_table_member();
-dump_assign_table();
-#dump_var_table();
+#dump_assign_table();
+dump_var_table();
 dump_table_tree( $table_root, "" );
 
 close($fh);
 
+1
