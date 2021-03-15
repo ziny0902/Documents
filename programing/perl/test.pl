@@ -55,7 +55,7 @@ $state_func_map[Parser_Varlist] = \&parser_varlist;
 $state_func_map[Parser_Prefixexp] = \&parser_prefixexp;
 $state_func_map[Parser_Name] = \&parser_name;
 $state_func_map[Parser_Namelist] = \&parser_namelist;
-$state_func_map[Parser_Functioncall] = \&parser_functioncall;
+#$state_func_map[Parser_Functioncall] = \&parser_functioncall;
 $state_func_map[Parser_Tableconstructor] = \&parser_tableconstructor;
 $state_func_map[Parser_Paralist] = \&parser_paralist;
 $state_func_map[Parser_Local] = \&parser_local;
@@ -88,6 +88,16 @@ my %parentheses_pair = (
   "{" => "}",
   "[" => "]",
 );
+
+my %opt_map = (
+  v => 0x01,
+  V => 0x02,
+  t => 0x04,
+  j => 0x08,
+  a => 0x10,
+);
+
+my %var_table = ();
 
 sub print_parser_state{
   my $state = shift(@_);
@@ -171,19 +181,52 @@ sub proc_assign_table_member{
   }
 }
 
+sub proc_assign_func{
+  my $node = shift; #Exp/Function body
+  my $fname = shift;
+
+  my $block_end = get_blockend( $node );
+  if( $fname =~ /\./ ) { # table memeber
+    my @names = split( /\./, $fname);
+    my $name = $names[$#names];
+    my $path = join( '/', @names );
+    my $func = AST::create_node( $name, "f" );
+    my $exist = AST::get_child( $table_root, $path );
+    if( not $exist ) {
+      pop( @names );
+      $path = join( '/', @names );
+      AST::add_child_by_path( $table_root, $func, $path);
+    }
+  }
+  my @var = ( $fname, "f", [${$node}{line}, $block_end]);
+  push( @{$var_table{ $var[0] }}, \@var);
+}
+
 sub proc_assignment{
-  my $node = shift;
+  my $node = shift; # Assignment
   my @vars = ();
   my $i = 0;
   for my $child( @{${$node}{child}} ){
     last if ${$child}{name} eq "Explist";
     if( ${$child}{name} eq "Var" )
     {
+      my $is_funcdef = AST::get_child( $node, "Explist#" .$i . "/Exp/Function body");
+      $i++;
       my $ret= get_varname( $child );
+      if( $is_funcdef ) {
+        proc_assign_func( $is_funcdef, $ret );
+        next;
+      }
       push( @vars, $ret );
     }else { # 'Varlist'
       my $ret= get_varlist( $child );
       for my $var ( @{$ret} ){
+        my $is_funcdef = AST::get_child( $node, "Explist#" .$i . "/Exp/Function body");
+        $i++;
+        if( $is_funcdef ) {
+          proc_assign_func( $is_funcdef, $var );
+          next;
+        }
         push( @vars, $var );
       }
     }
@@ -205,7 +248,6 @@ sub get_blockend{
   return $block_end;
 }
 
-my %var_table = ();
 
 sub proc_is_funcdef{
   my $node = shift; #Explist
@@ -241,7 +283,12 @@ sub proc_table{
     my $name = AST::get_child( $child, "Name" );
     my $field;
     if( $name ) {
-      $field = AST::create_node( ${$name}{value}, "v" );
+      my $is_funcdef = AST::get_child( $child, "Exp/Function body");
+      if( $is_funcdef ) {
+        $field = AST::create_node( ${$name}{value}, "f" );
+      }else {
+        $field = AST::create_node( ${$name}{value}, "v" );
+      }
     }else {
       #$field = AST::create_node( "$idx", "");
       $idx++;
@@ -337,16 +384,20 @@ sub dump_var_table{
 }
 
 sub ast_tree_dump {
-  my $root = shift(@_);
+  my $parser = shift;
   my $print_func = shift( @_ );
   my $prefix = shift( @_ );
+  my $root = ${$parser}{root};
   my $value = ${$root}{value};
-  print $prefix . ${$root}{name} . ": ";
-  if ( $value ) {
-    $print_func->( ${$root}{value} );
+
+  if( ${$parser}{opt} & $opt_map{V} ) {
+    print $prefix . ${$root}{name} . ": ";
+    if ( $value ) {
+      $print_func->( ${$root}{value} );
+    }
+    print "\t___[" . ${$root}{line};
+    print "]\n";
   }
-  print "\t___[" . ${$root}{line};
-  print "]\n";
   for my $child( @{${$root}{child}} ){
     if( ${$child}{name} eq "Assignment" ) {
       proc_assignment( $child );
@@ -355,14 +406,17 @@ sub ast_tree_dump {
     }elsif( $$child{name} eq "Function" ) {
       proc_function( $child );
     }
-    ast_tree_dump( $child, $print_func, $prefix . "  "  );
+    ${$parser}{root} = $child;
+    ast_tree_dump( $parser, $print_func, $prefix . "  "  );
+    ${$parser}{root} = $root;
   }
 }
 
 sub ast2json {
   my $root = shift(@_);
   my $value = ${$root}{value};
-  print "{ \"Name\": \"" . ${$root}{name} . "\", ";
+  #print "{ \"Name\": \"" . ${$root}{name} . "\", ";
+  print "{ \"" . ${$root}{name} . "\":{ ";
   if ( $value ) {
     $value =~ s/\\/\\\\/g;
     $value =~ s/"/\\"/g;
@@ -377,7 +431,7 @@ sub ast2json {
     ast2json( $child ); 
     $i++;
   }
-  print "\n]}";
+  print "]}\n}";
 }
 
 # store a statement
@@ -611,23 +665,23 @@ sub parser_explist{
 }
 
 # functioncall state machine
-sub parser_functioncall {
-  my $parser = shift(@_);
-  my $state = shift(@_);
-  my $token;
-
-  parser_func_wraper( $parser, Parser_Prefixexp);
-  $token = parser_getToken($parser); 
-  if ( ${$token}{name} eq ":") {
-    stat_pop( $parser ); # remove ':'
-    parser_func_wraper( $parser, Parser_Name); # prefixexp ':' Name
-    parser_func_wraper( $parser, Parser_Args);
-  } else {
-    parser_ungetToken( $parser, $token );
-    parser_func_wraper( $parser, Parser_Args);
-  }
-  return Parser_Functioncall;
-}
+#sub parser_functioncall {
+#  my $parser = shift(@_);
+#  my $state = shift(@_);
+#  my $token;
+#
+#  parser_func_wraper( $parser, Parser_Prefixexp);
+#  $token = parser_getToken($parser); 
+#  if ( ${$token}{name} eq ":") {
+#    stat_pop( $parser ); # remove ':'
+#    parser_func_wraper( $parser, Parser_Name); # prefixexp ':' Name
+#    parser_func_wraper( $parser, Parser_Args);
+#  } else {
+#    parser_ungetToken( $parser, $token );
+#    parser_func_wraper( $parser, Parser_Args);
+#  }
+#  return Parser_Functioncall;
+#}
 
 
 # prefixexp state machine
@@ -1134,6 +1188,15 @@ sub parser_assignment {
   my $token = parser_getToken($parser);
   if( %$token{name} ne "=" && %$token{name} ne "," ) {
     parser_ungetToken( $parser, $token );
+    ###############################################
+    # delete redundant depth functioncall/functioncall
+    ###############################################
+    my $root = ${$parser}{root};
+    my $child = AST::get_child( $root, "Functioncall" );
+    my $parent = ${$root}{parent};
+    pop( @{${$parent}{child}} );
+    AST::add_child( ${${$parser}{root}}{parent}, $child );
+    ###############################################
     return Parser_Functioncall;
   }
   if (%$token{name} eq ",") {
@@ -1553,19 +1616,41 @@ sub dump_table_tree{
   }
 }
 
+
+sub proc_argv{
+  my $parser = shift;
+  my $argv = shift;
+
+  ${$parser}{argv} = 0x00;
+  for my $v (@$argv){
+    if( $v =~ /^-/){
+      my @va = split( //, $v );
+      shift(@va);
+      for my $opt ( @va ) {
+        die "unknown option : " . $opt . "\n" if not $opt_map{$opt};
+        ${$parser}{opt} = ${$parser}{opt} | $opt_map{$opt};
+      }
+    }else{ #file name
+      ${$parser}{fname} = $v;
+    }
+  }
+}
+
 use Env;
 #my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
 #my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
-my $filename = "test.lua";
+#my $filename = "test.lua";
 #my $filename = "../lua/exviewer/exviewer.lua";
-#my $filename = "../lua/exviewer/plterm/plterm.lua";
+my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
 my @stat = ();
 
-open(my $fh, "< :encoding(UTF-8)", $filename)
-    || die "$0: can't open $filename for reading: $!";
+$parser = parser_create( undef );
+proc_argv( $parser, \@ARGV );
+open( my $fh, "< :encoding(UTF-8)", ${$parser}{fname} )
+    || die "$0: can't open ${$parser}{fname} for reading: $!";
+${$parser}{fh} = $fh;
 
-$parser = parser_create( $fh );
 my $root = ${$parser}{root};
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
@@ -1574,13 +1659,12 @@ if ( my $token = parser_getToken( $parser ) ){
   parser_error( $parser, "syntax error: Invalid statement [" . ${$token}{name} . "]" );
 }
 
-ast_tree_dump( $root, \&tree_print, "" );
-#proc_assign_table_member();
-##dump_assign_table();
-#dump_var_table();
-#dump_table_tree( $table_root, "" );
-
-#ast2json( $root );
+ast_tree_dump( $parser, \&tree_print, "" );
+proc_assign_table_member();
+dump_assign_table() if ${$parser}{opt} & $opt_map{a};
+dump_var_table() if ${$parser}{opt} & $opt_map{v};
+dump_table_tree( $table_root, "" ) if ${$parser}{opt} & $opt_map{t};
+ast2json( $root ) if ${$parser}{opt} & $opt_map{j};
 print "\n";
 
 close($fh);
