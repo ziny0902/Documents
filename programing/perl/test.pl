@@ -11,8 +11,6 @@ use enum qw(
 
 use AST;
 
-my $table_root = AST::create_node("Table", "");
-
 my @state_name_table = ();
 $state_name_table[Parser_Stat] = "Stat";
 $state_name_table[Parser_Name] = "Name";
@@ -97,15 +95,10 @@ my %opt_map = (
   a => 0x10,
 );
 
-my %var_table = ();
-
 sub print_parser_state{
   my $state = shift(@_);
   print "parser state : $state_name_table[$state]\n";
 }
-
-BEGIN{
-my %assign_table= ();
 
 sub get_varname {
   my $node = shift;
@@ -149,41 +142,57 @@ sub get_varlist{
 }
 
 sub register_variable{
+  my $parser = shift;
   my $node = shift;
   my $vars = shift;
+  my $assign_tbl = ${$parser}{assign_tbl};
   my $line = ${$node}{line};
   for my $var ( @$vars ){
-    next if ( $assign_table{$var} ); # already exist
-    $assign_table{$var} = $line;
+    next if ( ${$assign_tbl}{$var} ); # already exist
+    ${$assign_tbl}{$var} = $line;
   }
 }
 
 sub dump_assign_table{
-  for my $key ( keys %assign_table ){
-    print $key . " ,line : " . $assign_table{$key} . "\n";
+  my $parser = shift;
+  my $assign_tbl = ${$parser}{assign_tbl};
+  my $i = 0;
+  print "{ \"Assignment\": [\n";
+  for my $key ( keys %$assign_tbl ){
+    print ",\n" if $i > 0 ;
+    print "  { \"Name\": \"" . $key . "\"";
+    print ", \"Line\": " . ${$assign_tbl}{$key} . " }";
+    $i++;
   }
+  print "\n]}\n"
 }
 
 sub proc_assign_table_member{
-  for my $key ( keys %assign_table ){
+  my $parser = shift;
+  my $table_var_root = ${$parser}{table_var_root};
+  my $assign_tbl = ${$parser}{assign_tbl};
+  for my $key ( keys %$assign_tbl ){
     if( $key =~ /\./ ) {
       my @names = split( /\./, $key );
       my $name = $names[$#names];
       my $path = join( '/', @names );
       my $table = AST::create_node( $name, "v"); 
-      my $exist = AST::get_child( $table_root, $path );
+      my $exist = AST::get_child( $table_var_root, $path );
       if( not $exist ) {
         pop( @names );
         $path = join( '/', @names );
-        AST::add_child_by_path( $table_root, $table, $path);
+        AST::add_child_by_path( $table_var_root, $table, $path);
       }
     }
   }
 }
 
 sub proc_assign_func{
+  my $parser = shift;
   my $node = shift; #Exp/Function body
   my $fname = shift;
+  my $tbl_var_root = ${$parser}{table_var_root};
+  my $var_tbl = ${$parser}{var_tbl};
 
   my $block_end = get_blockend( $node );
   if( $fname =~ /\./ ) { # table memeber
@@ -191,18 +200,19 @@ sub proc_assign_func{
     my $name = $names[$#names];
     my $path = join( '/', @names );
     my $func = AST::create_node( $name, "f" );
-    my $exist = AST::get_child( $table_root, $path );
+    my $exist = AST::get_child( $tbl_var_root, $path );
     if( not $exist ) {
       pop( @names );
       $path = join( '/', @names );
-      AST::add_child_by_path( $table_root, $func, $path);
+      AST::add_child_by_path( $tbl_var_root, $func, $path);
     }
   }
   my @var = ( $fname, "f", [${$node}{line}, $block_end]);
-  push( @{$var_table{ $var[0] }}, \@var);
+  push( @{${$var_tbl}{ $var[0] }}, \@var);
 }
 
 sub proc_assignment{
+  my $parser = shift;
   my $node = shift; # Assignment
   my @vars = ();
   my $i = 0;
@@ -214,7 +224,7 @@ sub proc_assignment{
       $i++;
       my $ret= get_varname( $child );
       if( $is_funcdef ) {
-        proc_assign_func( $is_funcdef, $ret );
+        proc_assign_func( $parser, $is_funcdef, $ret );
         next;
       }
       push( @vars, $ret );
@@ -224,14 +234,14 @@ sub proc_assignment{
         my $is_funcdef = AST::get_child( $node, "Explist#" .$i . "/Exp/Function body");
         $i++;
         if( $is_funcdef ) {
-          proc_assign_func( $is_funcdef, $var );
+          proc_assign_func( $parser, $is_funcdef, $var );
           next;
         }
         push( @vars, $var );
       }
     }
   }
-  register_variable( $node, \@vars );
+  register_variable( $parser, $node, \@vars );
 }
 
 sub get_blockend{
@@ -239,7 +249,9 @@ sub get_blockend{
   my $child = ${$node}{child};
   my $last = $#{$child};
   my $block_end;
-
+  if( $last >=0 && not defined( ${$child}[$last] ) ) {
+    $last = -1; 
+  }
   if( $last >= 0 ) {
     $block_end = get_blockend( ${$child }[$last] );
   }else {
@@ -314,7 +326,10 @@ sub proc_self_to_class{ # target : funcbody
 }
 
 sub proc_function{
+  my $parser = shift;
   my $node = shift;
+  my $var_tbl = ${$parser}{var_tbl};
+  my $table_var_root = ${$parser}{table_var_root};
   my $funcname = AST::get_child( $node, "Funcname" );
   my $class = AST::get_child( $node, "Funcname/Class" );
   my $block_end = get_blockend( $node );
@@ -323,25 +338,28 @@ sub proc_function{
     proc_self_to_class( $node, $$class{value} );
     my $table_path = $$class{value}; 
     my $table = AST::create_node( $$funcname{value}, "f"); 
-    AST::add_child_by_path( $table_root, $table, $table_path );
+    AST::add_child_by_path( $table_var_root, $table, $table_path );
     $name = $$class{value} . ":" . $$funcname{value};
   }else {
     $name = $$funcname{value};
   }
   my @var = ($name, "f", [${$funcname}{line}, $block_end]);
-  push( @{$var_table{ $var[0] }}, \@var);
+  push( @{${$var_tbl}{ $var[0] }}, \@var);
   return;
 }
 
 sub proc_local{
+  my $parser = shift;
   my $node = shift;
   my $parent = ${$node}{parent};
+  my $var_tbl = ${$parser}{var_tbl};
+  my $table_var_root = ${$parser}{table_var_root};
   my $child;
   my $block_end = get_blockend( $parent );
   if( $child = AST::get_child( $node, "Name" ) ) { #function definition
     my $block_end = get_blockend( $node );
     my @name = (${$child}{value}, "f", [${$child}{line}, $block_end]);
-    push( @{$var_table{ $name[0] }}, \@name );
+    push( @{${$var_tbl}{ $name[0] }}, \@name );
     return;
   }
   $child = AST::get_child( $node, "Namelist" );
@@ -361,26 +379,34 @@ sub proc_local{
       ${$name}[2][1] = $block_end;
       my $table = AST::create_node( ${$name}[0], "v"); 
       proc_table( AST::get_child( $child, "Exp#" . $i ), $table );
-      AST::add_child( $table_root, $table );
+      AST::add_child( $table_var_root, $table );
     }
-    push( @{$var_table{ ${$name}[0] }}, $name );
+    push( @{${$var_tbl}{ ${$name}[0] }}, $name );
     $i++;
   }
 }
 
 sub dump_var_table{
-  for my $key ( keys %var_table ){
-    my $num = @{$var_table{$key}};
-    print $key;
+  my $parser = shift;
+  my $var_tbl = ${$parser}{var_tbl};
+  my $j = 0;
+  print "{\"Variable\": [\n";
+  for my $key ( keys %$var_tbl ){
+    my $num = @{${$var_tbl}{$key}};
+    print ", " if $j > 0;
+    print "{\"Name\": \"" . $key . "\", ";
+    print "\"type\": \"" . ${$var_tbl}{$key}[0][1] . "\", ";
+    print "\"Scope\": [";
     for (my $i=0; $i < $num; $i++){
-      print "\t" . $var_table{$key}[$i][2][0] 
-      . "-" . $var_table{$key}[$i][2][1] . "\t" 
-      . $var_table{$key}[$i][1];
+      print ", " if $i > 0;
+      print "{ \"s\": " . ${$var_tbl}{$key}[$i][2][0] 
+      . ", \"e\": " . ${$var_tbl}{$key}[$i][2][1] 
+      . "}";
     }
-    print "\n";
+    print "]}\n";
+    $j++;
   }
-}
-
+  print "]}\n";
 }
 
 sub ast_tree_dump {
@@ -400,11 +426,11 @@ sub ast_tree_dump {
   }
   for my $child( @{${$root}{child}} ){
     if( ${$child}{name} eq "Assignment" ) {
-      proc_assignment( $child );
+      proc_assignment( $parser, $child );
     }elsif( ${$child}{name} eq "Local" ) {
-      proc_local( $child );
+      proc_local( $parser, $child );
     }elsif( $$child{name} eq "Function" ) {
-      proc_function( $child );
+      proc_function( $parser, $child );
     }
     ${$parser}{root} = $child;
     ast_tree_dump( $parser, $print_func, $prefix . "  "  );
@@ -416,6 +442,7 @@ sub ast2json {
   my $root = shift(@_);
   my $value = ${$root}{value};
   #print "{ \"Name\": \"" . ${$root}{name} . "\", ";
+  return unless ${$root}{name};
   print "{ \"" . ${$root}{name} . "\":{ ";
   if ( $value ) {
     $value =~ s/\\/\\\\/g;
@@ -663,26 +690,6 @@ sub parser_explist{
   parser_ungetToken( $parser, $token );
   return Parser_Explist;
 }
-
-# functioncall state machine
-#sub parser_functioncall {
-#  my $parser = shift(@_);
-#  my $state = shift(@_);
-#  my $token;
-#
-#  parser_func_wraper( $parser, Parser_Prefixexp);
-#  $token = parser_getToken($parser); 
-#  if ( ${$token}{name} eq ":") {
-#    stat_pop( $parser ); # remove ':'
-#    parser_func_wraper( $parser, Parser_Name); # prefixexp ':' Name
-#    parser_func_wraper( $parser, Parser_Args);
-#  } else {
-#    parser_ungetToken( $parser, $token );
-#    parser_func_wraper( $parser, Parser_Args);
-#  }
-#  return Parser_Functioncall;
-#}
-
 
 # prefixexp state machine
 BEGIN{
@@ -996,13 +1003,17 @@ sub parser_create{
   my $fh = shift(@_);
   my @as = ();
   my @tokens = ();
-  my $root = AST::create_node("block", ""); 
+  my %variable = ();
+  my %assign = ();
   my %parser = (
     fh => $fh,
     as => \@as,
     line => 0,
     tokens => \@tokens,
-    root => $root,
+    root => AST::create_node("block", ""),
+    var_tbl => \%variable,
+    assign_tbl => \%assign,
+    table_var_root => AST::create_node("Table", ""),
   );
   return \%parser;
 }
@@ -1119,7 +1130,7 @@ sub parser_getToken{
     s/^\s+//;   # remove a leading whitespace
     s/\s+$//;   # remove a tailing whitespace
     s/^#!.*$//;  # remove a shell instruction
-    s/^--.*$//;  # remove a comment
+    s/^--.*$//;  # remove a comment line
     next if length($_) == 0;
     @$as = split(//, $_);
     next unless ( my $token = parser_tokenizer($as) ); 
@@ -1608,12 +1619,15 @@ sub tree_print {
 sub dump_table_tree{
   my $root = shift(@_);
   my $prefix = shift( @_ );
-  printf( "%s%-25s%s\n", $prefix, ${$root}{name},  ${$root}{value} ); 
-  #print $prefix . ${$root}{name} . "\t". ${$root}{value} . "\n";
+  print "{\"Name\": \"" . ${$root}{name} . "\", \"type\": \"". ${$root}{value} . "\", ";
+  print "\"member\": [";
+  my $i = 0;
   for my $child( @{${$root}{child}} ){
-    print $prefix . "|_"  . "\n";
+    print ", " if $i;
     dump_table_tree( $child, $prefix . "  "  );
+    $i++;
   }
+  print "]}";
 }
 
 
@@ -1637,11 +1651,6 @@ sub proc_argv{
 }
 
 use Env;
-#my $filename = "$HOME/Documents/programing/lua/exviewer/layout.lua";
-#my $filename = "/home/ziny/.config/awesome/color/blue/keys-config.lua";
-#my $filename = "test.lua";
-#my $filename = "../lua/exviewer/exviewer.lua";
-my $filename = "../lua/exviewer/plterm/plterm.lua";
 my $parser = undef;
 my @stat = ();
 
@@ -1650,8 +1659,9 @@ proc_argv( $parser, \@ARGV );
 open( my $fh, "< :encoding(UTF-8)", ${$parser}{fname} )
     || die "$0: can't open ${$parser}{fname} for reading: $!";
 ${$parser}{fh} = $fh;
-
 my $root = ${$parser}{root};
+${$root}{value} = ${$parser}{fname};
+
 while ( parser_stat_decision( $parser ) != Parser_End ){
 }
 if ( my $token = parser_getToken( $parser ) ){
@@ -1660,13 +1670,11 @@ if ( my $token = parser_getToken( $parser ) ){
 }
 
 ast_tree_dump( $parser, \&tree_print, "" );
-proc_assign_table_member();
-dump_assign_table() if ${$parser}{opt} & $opt_map{a};
-dump_var_table() if ${$parser}{opt} & $opt_map{v};
-dump_table_tree( $table_root, "" ) if ${$parser}{opt} & $opt_map{t};
+proc_assign_table_member( $parser );
+dump_assign_table( $parser ) if ${$parser}{opt} & $opt_map{a};
+dump_var_table( $parser ) if ${$parser}{opt} & $opt_map{v};
+dump_table_tree( ${$parser}{table_var_root}, "" ) if ${$parser}{opt} & $opt_map{t};
 ast2json( $root ) if ${$parser}{opt} & $opt_map{j};
 print "\n";
 
 close($fh);
-
-1

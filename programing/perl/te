@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+
+./test.pl -t $1 \
+| jq '[.member[]
+| {"Depth": [paths | if .[length - 1] == "Name" then [length] else empty end]
+, "Names": [recurse( .member[] ) | [.Name, .type]] }
+| [[.Depth[]], [.Names[]]]
+| [[.[0]] + [.[1]]
+| .[]
+| to_entries | [.[]][]]
+| group_by(.key) | [.[][]] | group_by(.key)] | [.[][] | [.[].value[]]
+| .][] | [.[]] | @csv' \
+| sed 's/"\|\\//g'\
+| awk -F, '
+{ for(i = 0; i < $1; i++) {printf "  "} printf "%-20s%s\n", $2, $3}
+'\
+| fzf --layout=reverse
+#| less -R

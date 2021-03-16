@@ -50,7 +50,6 @@ parser_func_wraper	test.pl	/^sub parser_func_wraper{$/;"	s
 parser_funcbody	test.pl	/^sub parser_funcbody {$/;"	s
 parser_funcname	test.pl	/^  sub parser_funcname {$/;"	s
 parser_function	test.pl	/^sub parser_function {$/;"	s
-parser_functioncall	test.pl	/^sub parser_functioncall {$/;"	s
 parser_getToken	test.pl	/^sub parser_getToken{$/;"	s
 parser_goto	test.pl	/^sub parser_goto{$/;"	s
 parser_if	test.pl	/^sub parser_if {$/;"	s
@@ -74,6 +73,8 @@ parser_util	test.pl	/^sub parser_util {$/;"	s
 parser_varlist	test.pl	/^sub parser_varlist{$/;"	s
 parser_while	test.pl	/^sub parser_while {$/;"	s
 print_parser_state	test.pl	/^sub print_parser_state{$/;"	s
+proc_argv	test.pl	/^sub proc_argv{$/;"	s
+proc_assign_func	test.pl	/^sub proc_assign_func{$/;"	s
 proc_assign_table_member	test.pl	/^sub proc_assign_table_member{$/;"	s
 proc_assignment	test.pl	/^sub proc_assignment{$/;"	s
 proc_function	test.pl	/^sub proc_function{$/;"	s

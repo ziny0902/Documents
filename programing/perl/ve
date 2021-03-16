@@ -1,2 +1,8 @@
 #!/usr/bin/bash
-./test.pl | awk -F '\t' '/v$/{printf "%-40s%-20s\n", $1, $2 }' | fzf
+./test.pl -v $1 > ve.json 
+cat ve.json \
+| jq '.Variable | .[] | if .type == "v" then [.Name, .Scope[].s, .Scope[].e]  else empty end | join(",")' \
+| sed 's/"//g' \
+| awk -F, '{ printf "%-30s\t\t", $1; for(i=2; i<=NF; i=i+2){printf "%s-%s ", $i, $(i+1) } print ""}' \
+| fzf
+\rm ve.json

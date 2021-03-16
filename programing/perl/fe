@@ -1,12 +1,18 @@
 #!/usr/bin/bash
+./test.pl -v $1 > fe.json
 while true; do
-  ./test.pl \
-    | awk -F '\t' '/[ft]$/{printf "%-40s%-20s%-5s\n", $1, $2, $3 }' \
-    | fzf \
-    | awk '{print $2}' \
-    | awk -F '-' '{printf "%d,%dp\n", $1, $2}' \
-    | ed -s /home/ziny/.config/awesome.RedFlat/color/blue/keys-config.lua \
-    > tmp.lua 
-  [ -s tmp.lua ] &&  bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua || \rm tmp.lua;exit 1
-  \rm tmp.lua
+  cat fe.json \
+  | jq '.Variable | .[] | if .type == "f" then [.Name, .Scope[].s, .Scope[].e]  else empty end | join(",")' \
+  | sed 's/"//g' \
+  | awk -F, '{ printf "%-30s\t\t%s-%s\n", $1, $2, $3 }' \
+  | fzf \
+  | awk '{print $2}' \
+  | awk -F '-' '{printf "%d,%dp\n", $1, $2}' \
+  | ed -s $1 \
+  > tmp.lua 
+  [ -s tmp.lua ] \
+  &&  bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua \
+  || break 
 done
+\rm tmp.lua
+\rm fe.json
