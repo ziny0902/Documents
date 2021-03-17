@@ -1,18 +1,55 @@
 #!/usr/bin/bash
-
-./test.pl -t $1 \
-| jq '[.member[]
-| {"Depth": [paths | if .[length - 1] == "Name" then [length] else empty end]
-, "Names": [recurse( .member[] ) | [.Name, .type]] }
-| [[.Depth[]], [.Names[]]]
-| [[.[0]] + [.[1]]
-| .[]
-| to_entries | [.[]][]]
-| group_by(.key) | [.[][]] | group_by(.key)] | [.[][] | [.[].value[]]
-| .][] | [.[]] | @csv' \
-| sed 's/"\|\\//g'\
-| awk -F, '
-{ for(i = 0; i < $1; i++) {printf "  "} printf "%-20s%s\n", $2, $3}
+cat test.dat \
+| jq '.member
+| 
+  (
+  ([
+    paths 
+    | if .[length -1 ] == "Name" 
+      then
+        ( . | reduce .[] as $item 
+        ([]; (. | length) as $len | 
+          if $item == "member" then 
+              if ($len ) > 0 then 
+                .[0:($len - 1 )] + [ (.[ ($len - 1) ] + ["Name"]) ]
+              else 
+                [ ["Name"] ]
+              end 
+              + 
+              if ($len) > 0 then
+                 [ .[ ($len - 1) ] + [$item] ]
+              else
+                [ [$item] ]
+              end
+          else
+            if ($len) > 0 then
+              .[0:($len - 1 )] +  [ (.[ ($len - 1) ] + [$item]) ]
+            else
+              [ [$item] ]
+            end
+          end
+          )
+        )
+      else 
+        empty 
+      end
+  ]) | to_entries)[] as $paths
+  | [ 
+      getpath( $paths.value[] )
+      , 
+      " " + 
+      ( [ 
+        $paths.value[] | [ .[] | 
+        if type == "string" 
+        then  
+          sub("Name"; "type")  
+        else . end
+        ]
+      ] ) as $tpath |
+        getpath( $tpath[ ($tpath | length) - 1 ] )
+    ] 
+  | reduce .[] as $name (""; . + "/" + $name)
+      
 '\
-| fzf --layout=reverse
-#| less -R
+| sed 's/"//g' | sed 's/\/ /\t/' | awk '{ printf "%s  [%s]\n", $1, $2 }' \
+| tree --fromfile | less -R

@@ -285,7 +285,7 @@ sub proc_is_table{
 
 sub proc_table{
   my $node = shift; #Exp
-  my $var_root = shift;
+  my $table_root = shift;
   my $table_node = AST::get_child( $node, "Tableconstructor" ); # Exp/Tableconstructor
   # field traverse
   my $idx = 0;
@@ -310,7 +310,7 @@ sub proc_table{
       $child = AST::get_child( $child, "Exp" );
       proc_table( $child, $field );
     }
-    AST::add_child( $var_root, $field ) if $field;
+    AST::add_child( $table_root, $field ) if $field;
   }
 }
 
