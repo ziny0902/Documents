@@ -1,8 +1,27 @@
 #!/usr/bin/bash
 ./test.pl -v $1 > ve.json 
 cat ve.json \
-| jq '.Variable | .[] | if .type == "v" then [.Name, .Scope[].s, .Scope[].e]  else empty end | join(",")' \
+| jq '.
+  Variable 
+  | .[] 
+  | if .type == "v"
+    then 
+      [.Name, .Scope[].s, .Scope[].e]  
+    else 
+      empty 
+    end 
+  | join(",")
+' \
 | sed 's/"//g' \
-| awk -F, '{ printf "%-30s\t\t", $1; for(i=2; i<=NF; i=i+2){printf "%s-%s ", $i, $(i+1) } print ""}' \
+| awk -F, '
+  { 
+    printf "%-30s\t\t", $1; 
+    for(i=2; i<=NF; i=i+2)
+    {
+      printf "%s-%s ", $i, $(i+1) 
+    } 
+    print ""
+  }
+' \
 | fzf
 \rm ve.json

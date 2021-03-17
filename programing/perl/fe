@@ -2,7 +2,17 @@
 ./test.pl -v $1 > fe.json
 while true; do
   cat fe.json \
-  | jq '.Variable | .[] | if .type == "f" then [.Name, .Scope[].s, .Scope[].e]  else empty end | join(",")' \
+  | jq '
+    .Variable 
+    | .[] 
+    | if .type == "f" 
+      then 
+        [.Name, .Scope[].s, .Scope[].e]  
+      else 
+        empty 
+      end 
+    | join(",")
+  ' \
   | sed 's/"//g' \
   | awk -F, '{ printf "%-30s\t\t%s-%s\n", $1, $2, $3 }' \
   | fzf \
@@ -11,7 +21,8 @@ while true; do
   | ed -s $1 \
   > tmp.lua 
   [ -s tmp.lua ] \
-  &&  bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua \
+  && \  
+  bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua \
   || break 
 done
 \rm tmp.lua
