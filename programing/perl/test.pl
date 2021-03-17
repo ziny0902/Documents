@@ -194,7 +194,7 @@ sub proc_assign_func{
   my $tbl_var_root = ${$parser}{table_var_root};
   my $var_tbl = ${$parser}{var_tbl};
 
-  my $block_end = get_blockend( $node );
+  my $block_end = get_blockend( ${$node}{parent} );
   if( $fname =~ /\./ ) { # table memeber
     my @names = split( /\./, $fname);
     my $name = $names[$#names];
@@ -204,6 +204,8 @@ sub proc_assign_func{
     if( not $exist ) {
       pop( @names );
       $path = join( '/', @names );
+      ${$func}{sline} = ${$node}{line};
+      ${$func}{eline} = $block_end;
       AST::add_child_by_path( $tbl_var_root, $func, $path);
     }
   }
@@ -298,6 +300,8 @@ sub proc_table{
       my $is_funcdef = AST::get_child( $child, "Exp/Function body");
       if( $is_funcdef ) {
         $field = AST::create_node( ${$name}{value}, "f" );
+        ${$field}{eline} = get_blockend( AST::get_child( $is_funcdef, ".." ) );
+        ${$field}{sline} = ${$is_funcdef}{line};
       }else {
         $field = AST::create_node( ${$name}{value}, "v" );
       }
@@ -1620,6 +1624,10 @@ sub dump_table_tree{
   my $root = shift(@_);
   my $prefix = shift( @_ );
   print "{\"Name\": \"" . ${$root}{name} . "\", \"type\": \"". ${$root}{value} . "\", ";
+  if( defined ${$root}{sline} )
+  {
+    print "\"line\": \"" . ${$root}{sline} . "-" . ${$root}{eline} . "\", ";
+  }
   print "\"member\": [";
   my $i = 0;
   for my $child( @{${$root}{child}} ){

@@ -21,7 +21,7 @@ while true; do
   | ed -s $1 \
   > tmp.lua 
   [ -s tmp.lua ] \
-  && \  
+  && \
   bat --wrap never --theme gruvbox-dark --pager "less -SR" --tabs 2 tmp.lua \
   || break 
 done

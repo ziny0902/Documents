@@ -213,6 +213,10 @@ sub get_child{
     my $idx = shift( @arr );
     $idx = 0 unless $idx;
     my $i = -1;
+    if ( $name eq ".." ) {
+      $root = ${$root}{parent};
+      next;
+    }
     for $node ( @{${$root}{child}} ){
       if( ${$node}{name} eq $name ){
         $i++;

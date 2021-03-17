@@ -23,6 +23,11 @@ $child = AST::create_node( "leaf", "" );
 AST::add_child_by_path( $root, $child, "child/grand child#2" );
 AST::add_child_by_path( $root, $child, "child/grand child#0" );
 ast_tree_dump( $root, "" );
+$child = AST::get_child( $root, "child/grand_child1" );
+$child = AST::get_child( $child, "../grand child#2" );
+print "\n\n\n=========\n";
+ast_tree_dump( $child, "" );
+
 
 
 my @c = ( 1, 2, 3, 4 );

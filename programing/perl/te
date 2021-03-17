@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-cat test.dat \
+./test.pl -t $1 \
 | jq '.member
 | 
   (
@@ -36,8 +36,7 @@ cat test.dat \
   ]) | to_entries)[] as $paths
   | [ 
       getpath( $paths.value[] )
-      , 
-      " " + 
+      , " " + 
       ( [ 
         $paths.value[] | [ .[] | 
         if type == "string" 
@@ -45,11 +44,24 @@ cat test.dat \
           sub("Name"; "type")  
         else . end
         ]
-      ] ) as $tpath |
+      ] 
+      ) as $tpath |
         getpath( $tpath[ ($tpath | length) - 1 ] )
+      , " " + 
+      ( [ 
+        $paths.value[] | [ .[] | 
+        if type == "string" 
+        then  
+          sub("Name"; "line")  
+        else . end
+        ]
+      ] 
+      ) as $tpath |
+        getpath( $tpath[ ($tpath | length) - 1 ] ) 
     ] 
   | reduce .[] as $name (""; . + "/" + $name)
       
 '\
-| sed 's/"//g' | sed 's/\/ /\t/' | awk '{ printf "%s  [%s]\n", $1, $2 }' \
+| sed 's/"//g' | sed 's/\/ /\t/g' \
+| awk '{ printf "%-20s  [%s %s]\n", $1, $3, $2 }' \
 | tree --fromfile | less -R

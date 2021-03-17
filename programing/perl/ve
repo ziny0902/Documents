@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 ./test.pl -v $1 > ve.json 
 cat ve.json \
-| jq '.
-  Variable 
+| jq '
+  .Variable 
   | .[] 
   | if .type == "v"
     then 
