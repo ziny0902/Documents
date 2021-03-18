@@ -507,7 +507,7 @@ BEGIN {
     my $str = "";
     while( $token = stat_shift( $parser ) ) {
       if( length( $str ) ){ 
-        $str = $str . " ";
+        $str = $str;
       }
       if ( $literal{ %$token{name} } ) {
         $str = $str .  %$token{value};
@@ -658,6 +658,13 @@ sub parser_namelist{
   return Parser_Namelist;
 }
 
+sub parser_var{
+  my $parser = shift(@_);
+  parser_func_wraper( $parser, Parser_Op);
+  parser_func_wraper( $parser, Parser_Name);
+  return Parser_Var;
+}
+
 sub parser_varlist{
   my $parser = shift(@_);
   my $state = Parser_Varlist;
@@ -703,7 +710,7 @@ BEGIN{
     "{" => Parser_Args,
     ":" => Parser_Functioncall,
     "String" => Parser_Args,
-    "." => Parser_Name,
+    "." => Parser_Var,
     "[" => Parser_Unopexp,
   };
   $transition[Parser_Prefixexp] = {
@@ -713,7 +720,8 @@ BEGIN{
   $transition[Parser_Var] = {
     "(" => Parser_Args,
     "{" => Parser_Args,
-    "." => Parser_Name,
+    "String" => Parser_Args,
+    "." => Parser_Var,
     ":" => Parser_Functioncall,
     "[" => Parser_Unopexp,
   };
@@ -973,6 +981,40 @@ sub scan_op{
   return wantarray ? %token : die;
 }
 
+sub scan_mstring{
+  my $parser = shift(@_);
+  my $as = %$parser{as};
+  my $fh = %$parser{fh};
+  my $ch;
+
+  my $str;
+  while(1){
+    if( $#$as < 0 ) {
+      return undef unless $_= <$fh>;
+      parser_readline( $parser );
+      $as = %$parser{as};
+      $str .= '\n';
+    }
+    $ch = shift( @{$as} );
+    if( $ch eq '\\' ) {
+      next if( $#$as < 0 );
+      $str .= $ch;
+      $str .= shift( @{$as} );
+      next;
+    }
+    if( $ch eq ']' && $#$as >= 0) {
+      if( ${$as}[0] == ']'){ # end of string
+        shift( @{$as} );
+        my %token = create_token();
+        $token{name} = "String";
+        $token{value} = $str;
+        return \%token;
+      }
+    }
+    $str .= $ch;
+  }
+}
+
 sub parser_tokenizer{
   my $as = shift(@_);
   my %token = ();
@@ -985,7 +1027,7 @@ sub parser_tokenizer{
     elsif( $ch =~ /[0-9]/){
       %token = scan_number($ch, $as);
     }
-    elsif( $ch =~ /["']/){
+    elsif( $ch =~ /["']/) {
       %token = scan_string($ch, $as);
     }
     elsif( $ch !~ /\s/ ){
@@ -1113,6 +1155,7 @@ sub parser_comment{
   }
 }
 
+
 # args : file handle
 # return : hash reference
 sub parser_getToken{
@@ -1121,6 +1164,12 @@ sub parser_getToken{
   my $fh = %$parser{fh};
 
   parser_comment( $parser );
+  # TODO : processing [[]] double quote multiline string 
+  if( ${$as}[0] eq '[' && ${$as}[1] eq '[' ) {
+    shift( @{$as} );
+    shift( @{$as} ); # remove double quote
+    return scan_mstring( $parser );
+  }
   if ( defined (my $ch = shift(@$as)) ) {
     unshift( @$as, $ch );
     my $token = parser_tokenizer($as); 
@@ -1166,10 +1215,10 @@ sub parser_ungetToken{
   stat_pop( $parser ) if %$token{name};
   # if name == "Name", "Number", "String" then unshift value.
   if ($name eq "Name" || $name eq "Number" || $name eq "String" ) {
-    @arr = split(//, $value . " ");
+    @arr = split(//, $value );
   } else {
     $name = "::" if $name eq "label";
-    @arr = split(//, $name . " ");
+    @arr = split(//, $name );
   }
   unshift(@$as, @arr);
 }
@@ -1185,10 +1234,10 @@ sub parser_ungetAllToken{
     my $value = %$token{value};
     my @arr=();
     if ($name eq "Name" || $name eq "Number" || $name eq "String") {
-      @arr = split(//, $value . " ");
+      @arr = split( //, $value );
     } else {
       $name = "::" if $name eq "label";
-      @arr = split(//, $name. " ");
+      @arr = split( //, $name );
     }
     unshift(@$as, @arr);
   }
@@ -1373,6 +1422,7 @@ BEGIN {
   };
   $transition[Parser_Name] = {
     "." => Parser_Funcname,
+    ":" => Parser_Funcname,
   };
 
   sub parser_funcname {
