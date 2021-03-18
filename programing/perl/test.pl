@@ -1004,7 +1004,8 @@ sub scan_mstring{
     }
     if( $ch eq ']' && $#$as >= 0) {
       if( ${$as}[0] == ']'){ # end of string
-        shift( @{$as} );
+        $str .= $ch;
+        $str .= shift( @{$as} );
         my %token = create_token();
         $token{name} = "String";
         $token{value} = $str;
@@ -1166,9 +1167,9 @@ sub parser_getToken{
   parser_comment( $parser );
   # TODO : processing [[]] double quote multiline string 
   if( ${$as}[0] eq '[' && ${$as}[1] eq '[' ) {
-    shift( @{$as} );
-    shift( @{$as} ); # remove double quote
-    return scan_mstring( $parser );
+    my $token = scan_mstring( $parser );
+    stat_push( $parser, $token ) if $token;
+    return $token
   }
   if ( defined (my $ch = shift(@$as)) ) {
     unshift( @$as, $ch );
