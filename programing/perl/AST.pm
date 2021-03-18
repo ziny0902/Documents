@@ -239,4 +239,75 @@ sub add_neighbor {
   ${$child_node}{parent} = ${$self}{parent};
 }
 
+sub dump_hash{
+  my $hash = shift;
+  my $indent_str = shift;
+  my $indent = shift;
+  my @keys = sort( keys %{$hash} );
+  for( $i = 0; $i < $indent; $i++ ) {
+    $indent_str = $indent_str . " ";
+  }
+  print $indent_str . "{\n";
+  my @nested_keys = ();
+  my @nested_vals = ();
+  while (@keys) {
+    my $key = shift( @keys );
+    my $val = ${$hash}{$key};
+    next if ( $key eq "parent" );
+    my $type = ref( $val ); 
+    if( $type eq "HASH" ){
+      push( @nested_keys, $key );
+      push( @nested_vals, $val );
+    }elsif( $type eq "ARRAY" ){
+      push( @nested_keys, $key );
+      push( @nested_vals, $val );
+    }else {
+      print $indent_str . $key . " :" . $val . "\n";
+    }
+  }
+  while( @nested_keys ){
+    my $val = shift( @nested_vals );
+    my $key = shift( @nested_keys );
+    my $type = ref( $val ); 
+    if( $type eq "HASH" ){
+      print $indent_str . $key . " :\n";
+      dump_hash( $val, $indent_str, $indent );
+    }elsif( $type eq "ARRAY" ){
+      print $indent_str . $key . " :\n";
+      dump_array( $val, $indent_str, $indent );
+    }
+  }
+  print $indent_str . "}\n"
+}
+
+sub dump_array{
+  my $arr = shift;
+  my $indent_str = shift;
+  my $indent = shift;
+  return if $#{$arr} < 0;
+  for( $i = 0; $i < $indent; $i++ ) {
+    $indent_str = $indent_str . " ";
+  }
+  print $indent_str . "[\n";
+  while( @$arr ){
+    my $val = shift( @$arr );
+    my $type = ref( $val );
+    if( $type eq "HASH" ){
+      dump_hash( $val, $indent_str, $indent );
+    }elsif( $type eq "ARRAY" ){
+      dump_arr( $val, $indent_str, $indent );
+    }else {
+      print $indent_str . $val . "\n";
+    }
+  }
+  print $indent_str . "]\n";
+}
+
+sub dump {
+  my $node = shift;
+  my $indent = shift;
+
+  dump_hash( $node, "", $indent);
+}
+
 1

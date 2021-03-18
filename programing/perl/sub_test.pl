@@ -27,6 +27,8 @@ $child = AST::get_child( $root, "child/grand_child1" );
 $child = AST::get_child( $child, "../grand child#2" );
 print "\n\n\n=========\n";
 ast_tree_dump( $child, "" );
+print "\n\n\n=========\n";
+AST::dump( $root, 2 );
 
 
 
