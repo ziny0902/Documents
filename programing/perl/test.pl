@@ -914,7 +914,6 @@ sub parser_ungetToken{
   if ($name eq "Name" || $name eq "Number" || $name eq "String" ) {
     @arr = split(//, $value );
   } else {
-    $name = "::" if $name eq "label";
     @arr = split(//, $name );
   }
   $$parser{scanner}->ungetToken( \@arr );
@@ -932,7 +931,6 @@ sub parser_ungetAllToken{
     if ($name eq "Name" || $name eq "Number" || $name eq "String") {
       @arr = split( //, $value );
     } else {
-      $name = "::" if $name eq "label";
       @arr = split( //, $name );
     }
     $$parser{scanner}->ungetToken( \@arr );
@@ -1388,6 +1386,7 @@ sub proc_argv{
   my $parser = shift;
   my $argv = shift;
 
+  $$parser{fname} = "";
   ${$parser}{argv} = 0x00;
   for my $v (@$argv){
     if( $v =~ /^-/){
@@ -1401,6 +1400,7 @@ sub proc_argv{
       ${$parser}{fname} = $v;
     }
   }
+  die "You didn't enter a file name \n" if length ${$parser}{fname};
 }
 
 sub parser_scanner_init{
