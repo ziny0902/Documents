@@ -9,6 +9,7 @@ sub new{
             bcomment_s => $args->{bcomment_s},
             bcomment_e => $args->{bcomment_e},
             mlength_op => $args->{mlength_op},
+            qq_unqqs => $args->{qq_unqqs},
             as => (),
             line => 0
             }, $class;
@@ -55,32 +56,6 @@ sub scan_number {
   return wantarray ? %token : die;
 }
 
-sub scan_string{
-  my $self = shift;
-  my $as = \@{$self->{as}};
-  my %token;
-  $token{name} = "String";
-  my $quote = $token{value} = shift( @$as );
-  my $ch;
-  while ( defined ( $ch = shift( @$as ) ) ){
-    if( $ch =~ /\\/){
-      $token{value} .= $ch;
-      $ch = shift( @$as );
-      ( defined ($ch) ) ? ($token{value} .= $ch) : last;
-      next;
-    } 
-    if( $ch ne $quote ){
-      $token{value} .= $ch;
-    } 
-    else {
-      $token{value} .= $ch;
-      last;
-    }
-  }
-  die "missing quote ' " .$quote. " ' " if( $ch ne $quote );
-  return wantarray ? %token : die;
-}
-
 sub scan_op{
   my $self = shift;
   my $as = \@{$self->{as}};
@@ -100,18 +75,43 @@ sub scan_op{
   return wantarray ? %token : die;
 }
 
-# TODO: need to remove hard coding ']]' 
-sub scan_mstring{
+sub check_quote_seq{
   my $self = shift;
+  my $quote_unquote_seq = $self->{qq_unqqs};
+  my $as = \@{$self->{as}};
+  for( my $i = 0; $i <= $#{$quote_unquote_seq}; $i ++ ) {
+    $qq_seq = ${$quote_unquote_seq}[$i];
+    my $qq_seq_len = length ${$qq_seq}{quote};
+    @slice = @{$as}[0..($qq_seq_len -1)];
+    $str = join( '', @slice );
+    if( $str eq ${$qq_seq}{quote} ){
+      return $self->scan_quote_string( $i );
+    }
+  }
+  return undef;
+}
+
+sub scan_quote_string{
+  my $self = shift;
+  my $idx = shift;
+  my $quote_unquote_seq = $self->{qq_unqqs};
+  my $qq_seq = ${$quote_unquote_seq}[$idx];
   my $as = \@{$self->{as}};
   my $fh = $self->{fh};
+  my @unquote = split( //, ${$qq_seq}{unquote} ); 
   my $ch;
-
   my $str;
+
+  for( $i = 0; $i < length ${$qq_seq}{quote}; $i++ ){
+    $str .= shift( @{$as} );
+  }
+
+  my @pattern=();
   while(1){
     if( $#$as < 0 ) {
-      return undef unless $_= <$fh>;
+      die "syntax error:  a quoted string is not enclosed" unless $_= <$fh>;
       $self->readline( $_ );
+      $pattern=();
     }
     $ch = shift( @{$as} );
     if( $ch eq '\\' ) {
@@ -119,16 +119,16 @@ sub scan_mstring{
       $str .= $ch;
       $str .= shift( @{$as} );
       next;
+    }else {
+      shift( @pattern ) if( $#pattern == $#unquote );
+      push( @pattern, $ch );
     }
-    if( $ch eq ']' && $#$as >= 0) {
-      if( ${$as}[0] == ']'){ # end of string
-        $str .= $ch;
-        $str .= shift( @{$as} );
-        my %token;
-        $token{name} = "String";
-        $token{value} = $str;
-        return \%token;
-      }
+    if( join( '', @pattern) eq ${$qq_seq}{unquote} ) {
+      $str .= $ch;
+      my %token;
+      $token{name} = "String";
+      $token{value} = $str;
+      return \%token;
     }
     $str .= $ch;
   }
@@ -148,10 +148,6 @@ sub parser_tokenizer{
     elsif( $ch =~ /[0-9]/){
       unshift( @$as, $ch );
       %token = $self->scan_number( ); 
-    }
-    elsif( $ch =~ /["']/) {
-      unshift( @$as, $ch );
-      %token = $self->scan_string( );
     }
     elsif( $ch !~ /\s/ ){
       unshift( @$as, $ch );
@@ -242,7 +238,7 @@ sub parser_comment{
   while( 1 ){
     next if( not defined( $ch = shift( @$as ) ) );
     my $num_of_seq = @block_seq;
-    if( $num_of_seq == 4) { # a <-- b c d <-- e
+    if( $num_of_seq == ( length $bcomment_e ) ) { # a <-- b c d <-- e
       shift( @block_seq );
     }
     push( @block_seq, $ch );
@@ -269,17 +265,13 @@ sub getToken{
   my $fh = $self->{fh};
   my $lcomment = $self->{lcomment};
 
-  $self->parser_comment( );
-  # TODO : processing [[]] double quote multiline string 
-  if( @{$as}[0] eq '[' && @{$as}[1] eq '[' ) {
-    my $token = $self->scan_mstring( );
-    return $token
-  }
+  $self->parser_comment( ); # comment
+  my $token = $self->check_quote_seq( ); # quoted string
+  return $token if $token;
   if ( defined (my $ch = shift(@$as)) ) {
     unshift( @$as, $ch );
     my $token = $self->parser_tokenizer( ); 
     return $self->getToken( ) unless $token;
-    #    stat_push( $parser, $token );
     return $token;
   }
   while (<$fh>) {

@@ -536,9 +536,10 @@ BEGIN {
 
 sub parser_error{
   my $parser = shift( @_ );
+  my $scanner = ${$parser}{scanner};
   my $message = shift( @_ );
   stat_dump( $parser );
-  die "line : " . %$parser{line} . " " . $message;
+  die "line : " . $scanner->get_line_number() . " " . $message;
 }
 
 # exp state machine
@@ -1400,7 +1401,7 @@ sub proc_argv{
       ${$parser}{fname} = $v;
     }
   }
-  die "You didn't enter a file name \n" if length ${$parser}{fname};
+  die "You didn't enter a file name \n" unless length ${$parser}{fname};
 }
 
 sub parser_scanner_init{
@@ -1439,11 +1440,26 @@ sub parser_scanner_init{
       "//" => 1,
       "::" => 1,
     );
+  my @quote_unquote_seq = (
+    {
+      quote => "[[",
+      unquote => "]]"
+    },
+    {
+      quote => "\"",
+      unquote => "\""
+    },
+    {
+      quote => "\'",
+      unquote => "\'"
+    },
+  );
   my $scanner = Scanner->new( 
     { 
       fh=>$$parser{fh}, 
       keywords => \%keywords,
       mlength_op => \%mlength_op,
+      qq_unqqs => \@quote_unquote_seq,
       lcomment => "--",
       bcomment_s => "--[[",
       bcomment_e => "--]]",

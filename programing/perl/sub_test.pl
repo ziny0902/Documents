@@ -4,6 +4,7 @@ use 5.32.0;
 use AST;
 use Scanner;
 
+
 my $fname = "test.lua";
 
 open( my $fh, "< :encoding(UTF-8)", $fname )
@@ -43,11 +44,27 @@ my %mlength_op = (
     "::" => 1,
 );
 
+my @quote_unquote_seq = (
+  {
+    quote => "[[",
+    unquote => "]]"
+  },
+  {
+    quote => "\"",
+    unquote => "\""
+  },
+  {
+    quote => "'",
+    unquote => "'"
+  },
+);
+
 my $scanner = Scanner->new( 
   { 
     fh=>$fh, 
     keywords => \%keywords,
     mlength_op => \%mlength_op,
+    qq_unqqs => \@quote_unquote_seq,
     lcomment => "--",
     bcomment_s => "--[[",
     bcomment_e => "--]]",

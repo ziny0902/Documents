@@ -1,3 +1,6 @@
+'single quote'
+local cmd_result = tostring((ls ('-l ' .. path) : awk (action) ))
+str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
 mstring = [[
  this is multi line string
 ]]
@@ -42,8 +45,6 @@ local table1= { -- comment test
   c = { a = 1, b =2 }, -- adlfjalkf
   4
 }
---str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )
---local cmd_result = tostring((ls ("-l " .. path) : awk (action) ))
 ----
 ---- assignment test suit
 ----
