@@ -10,6 +10,7 @@
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
 !_TAG_PROGRAM_VERSION	5.9.0	/p5.9.20210110.0/
 AST	AST.pm	/^package AST;$/;"	p
+Scanner	Scanner.pm	/^package Scanner;$/;"	p
 add_child	AST.pm	/^sub add_child {$/;"	s
 add_child_by_path	AST.pm	/^sub add_child_by_path{$/;"	s
 add_exp_node	AST.pm	/^sub add_exp_node{$/;"	s
@@ -18,7 +19,6 @@ ast2json	test.pl	/^sub ast2json {$/;"	s
 ast_tree_dump	test.pl	/^sub ast_tree_dump {$/;"	s
 create_node	AST.pm	/^sub create_node {$/;"	s
 create_path	AST.pm	/^sub create_path{$/;"	s
-create_token	test.pl	/^sub create_token{$/;"	s
 dump	AST.pm	/^sub dump {$/;"	s
 dump_array	AST.pm	/^sub dump_array{$/;"	s
 dump_assign_table	test.pl	/^sub dump_assign_table{$/;"	s
@@ -27,19 +27,22 @@ dump_table_tree	test.pl	/^sub dump_table_tree{$/;"	s
 dump_token	test.pl	/^  sub dump_token {$/;"	s
 dump_tokens	test.pl	/^  sub dump_tokens {$/;"	s
 dump_var_table	test.pl	/^sub dump_var_table{$/;"	s
+getToken	Scanner.pm	/^sub getToken{$/;"	s
 get_blockend	test.pl	/^sub get_blockend{$/;"	s
 get_child	AST.pm	/^sub get_child{$/;"	s
+get_line_number	Scanner.pm	/^sub get_line_number{$/;"	s
 get_namelist	test.pl	/^sub get_namelist{$/;"	s
 get_priority	AST.pm	/^sub get_priority{$/;"	s
 get_varlist	test.pl	/^sub get_varlist{$/;"	s
 get_varname	test.pl	/^sub get_varname {$/;"	s
 left_op	AST.pm	/^sub left_op{$/;"	s
+new	Scanner.pm	/^sub new{$/;"	s
 parentheses_check	test.pl	/^sub parentheses_check {$/;"	s
 parser_args	test.pl	/^sub parser_args{$/;"	s
 parser_assignment	test.pl	/^sub parser_assignment {$/;"	s
 parser_break	test.pl	/^sub parser_break{$/;"	s
 parser_class	test.pl	/^sub parser_class{$/;"	s
-parser_comment	test.pl	/^sub parser_comment{$/;"	s
+parser_comment	Scanner.pm	/^sub parser_comment{$/;"	s
 parser_create	test.pl	/^sub parser_create{$/;"	s
 parser_do	test.pl	/^sub parser_do{$/;"	s
 parser_end	test.pl	/^sub parser_end{$/;"	s
@@ -63,16 +66,17 @@ parser_namelist	test.pl	/^sub parser_namelist{$/;"	s
 parser_op	test.pl	/^sub parser_op{$/;"	s
 parser_paralist	test.pl	/^  sub parser_paralist{$/;"	s
 parser_prefixexp	test.pl	/^  sub parser_prefixexp{$/;"	s
-parser_readline	test.pl	/^sub parser_readline{$/;"	s
 parser_repeat	test.pl	/^sub parser_repeat {$/;"	s
 parser_return	test.pl	/^sub parser_return{$/;"	s
+parser_scanner_init	test.pl	/^sub parser_scanner_init{$/;"	s
 parser_simpexp	test.pl	/^sub parser_simpexp{$/;"	s
 parser_stat_decision	test.pl	/^  sub parser_stat_decision {$/;"	s
 parser_tableconstructor	test.pl	/^sub parser_tableconstructor{$/;"	s
-parser_tokenizer	test.pl	/^sub parser_tokenizer{$/;"	s
+parser_tokenizer	Scanner.pm	/^sub parser_tokenizer{$/;"	s
 parser_ungetAllToken	test.pl	/^sub parser_ungetAllToken{$/;"	s
 parser_ungetToken	test.pl	/^sub parser_ungetToken{$/;"	s
 parser_util	test.pl	/^sub parser_util {$/;"	s
+parser_var	test.pl	/^sub parser_var{$/;"	s
 parser_varlist	test.pl	/^sub parser_varlist{$/;"	s
 parser_while	test.pl	/^sub parser_while {$/;"	s
 print_parser_state	test.pl	/^sub print_parser_state{$/;"	s
@@ -86,14 +90,15 @@ proc_is_table	test.pl	/^sub proc_is_table{$/;"	s
 proc_local	test.pl	/^sub proc_local{$/;"	s
 proc_self_to_class	test.pl	/^sub proc_self_to_class{ # target : funcbody$/;"	s
 proc_table	test.pl	/^sub proc_table{$/;"	s
+readline	Scanner.pm	/^sub readline{$/;"	s
 rearrange_ast2exp	AST.pm	/^sub rearrange_ast2exp{$/;"	s
 register_variable	test.pl	/^sub register_variable{$/;"	s
 right_op	AST.pm	/^sub right_op{$/;"	s
-scan_mstring	test.pl	/^sub scan_mstring{$/;"	s
-scan_name	test.pl	/^sub scan_name{$/;"	s
-scan_number	test.pl	/^sub scan_number {$/;"	s
-scan_op	test.pl	/^sub scan_op{$/;"	s
-scan_string	test.pl	/^sub scan_string{$/;"	s
+scan_mstring	Scanner.pm	/^sub scan_mstring{$/;"	s
+scan_name	Scanner.pm	/^sub scan_name{$/;"	s
+scan_number	Scanner.pm	/^sub scan_number {$/;"	s
+scan_op	Scanner.pm	/^sub scan_op{$/;"	s
+scan_string	Scanner.pm	/^sub scan_string{$/;"	s
 stat_dump	test.pl	/^  sub stat_dump{$/;"	s
 stat_dumptostring	test.pl	/^  sub stat_dumptostring{$/;"	s
 stat_pop	test.pl	/^  sub stat_pop {$/;"	s
@@ -101,3 +106,4 @@ stat_push	test.pl	/^  sub stat_push {$/;"	s
 stat_shift	test.pl	/^  sub stat_shift {$/;"	s
 stat_unshift	test.pl	/^  sub stat_unshift {$/;"	s
 tree_print	test.pl	/^sub tree_print {$/;"	s
+ungetToken	Scanner.pm	/^sub ungetToken{$/;"	s

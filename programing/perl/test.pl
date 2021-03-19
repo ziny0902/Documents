@@ -10,6 +10,7 @@ use enum qw(
 );
 
 use AST;
+use Scanner;
 
 my @state_name_table = ();
 $state_name_table[Parser_Stat] = "Stat";
@@ -53,7 +54,6 @@ $state_func_map[Parser_Varlist] = \&parser_varlist;
 $state_func_map[Parser_Prefixexp] = \&parser_prefixexp;
 $state_func_map[Parser_Name] = \&parser_name;
 $state_func_map[Parser_Namelist] = \&parser_namelist;
-#$state_func_map[Parser_Functioncall] = \&parser_functioncall;
 $state_func_map[Parser_Tableconstructor] = \&parser_tableconstructor;
 $state_func_map[Parser_Paralist] = \&parser_paralist;
 $state_func_map[Parser_Local] = \&parser_local;
@@ -863,199 +863,17 @@ sub parser_field {
   return Parser_Field;
 }
 
-my %keywords = (
-  "and" => 1,
-  "break" => 1,
-  "do" => 1,
-  "else" => 1,
-  "elseif" => 1,
-  "end" => 1,
-  "false" => 1,
-  "for" => 1,
-  "function" => 1,
-  "if" => 1,
-  "in" => 1,
-  "local" => 1,
-  "nil" => 1,
-  "not" => 1,
-  "or" => 1,
-  "repeat" => 1,
-  "return" => 1,
-  "then" => 1,
-  "true" => 1,
-  "until" => 1,
-  "while" => 1,
-  "goto" => 1,
-);
-
-sub create_token{
-  my %token =  (
-    name => "",
-    value => ""
-  );
-  return wantarray ? %token : die;
-}
-
-sub scan_name{
-  my %token = create_token();
-  $token{name} .= "Name";
-  $token{value} .= shift(@_);
-  while ( defined (my $ch = shift(@{$_[0]})) ){
-    if( $ch =~ /[a-zA-Z0-9_]/){
-      $token{value} .= $ch;
-    } else {
-      unshift(@{$_[0]}, $ch);
-      last;
-    }
-  }
-
-  if( exists $keywords{$token{value}} ){
-    $token{name} = $token{value};
-    $token{value} = "";
-  }
-
-  return wantarray ? %token : die;
-}
-
-sub scan_number {
-  my %token = create_token();
-  $token{name} = "Number";
-  $token{value} = shift(@_);
-  while ( defined (my $ch = shift(@{$_[0]})) ){
-    if( $ch =~ /[0-9\.xa-fA-F]/){
-      $token{value} .= $ch;
-    } else {
-      unshift(@{$_[0]}, $ch);
-      last;
-    }
-  }
-  return wantarray ? %token : die;
-}
-
-sub scan_string{
-  my %token = create_token();
-  $token{name} = "String";
-  my $quote = $token{value} = shift(@_);
-  while ( defined (my $ch = shift(@{$_[0]})) ){
-    if( $ch =~ /\\/){
-      $token{value} .= $ch;
-      $ch = shift(@{$_[0]});
-      ( defined ($ch) ) ? ($token{value} .= $ch) : last;
-      next;
-    } 
-    if( $ch ne $quote ){
-      $token{value} .= $ch;
-    } 
-    else {
-      $token{value} .= $ch;
-      last;
-    }
-  }
-  return wantarray ? %token : die;
-}
-
-sub scan_op{
-  my %multi_length_op = (
-    "..." => 1,
-    ".." => 1,
-    ">=" => 1,
-    "<=" => 1,
-    "==" => 1,
-    "~=" => 1,
-    "//" => 1,
-    "::" => 1,
-  );
-  my %token = create_token();
-  $token{name} = shift(@_);
-  $token{value} = "";
-  while ( defined (my $ch = shift(@{$_[0]})) ){
-    if( $multi_length_op{$token{name}.$ch}  ){
-      $token{name} .= $ch;
-    } 
-    else {
-      unshift(@{$_[0]}, $ch);
-      last;
-    } 
-  }
-  $token{name} = "label" if( $token{name} eq "::" );
-  return wantarray ? %token : die;
-}
-
-sub scan_mstring{
-  my $parser = shift(@_);
-  my $as = %$parser{as};
-  my $fh = %$parser{fh};
-  my $ch;
-
-  my $str;
-  while(1){
-    if( $#$as < 0 ) {
-      return undef unless $_= <$fh>;
-      parser_readline( $parser );
-      $as = %$parser{as};
-      $str .= '\n';
-    }
-    $ch = shift( @{$as} );
-    if( $ch eq '\\' ) {
-      next if( $#$as < 0 );
-      $str .= $ch;
-      $str .= shift( @{$as} );
-      next;
-    }
-    if( $ch eq ']' && $#$as >= 0) {
-      if( ${$as}[0] == ']'){ # end of string
-        $str .= $ch;
-        $str .= shift( @{$as} );
-        my %token = create_token();
-        $token{name} = "String";
-        $token{value} = $str;
-        return \%token;
-      }
-    }
-    $str .= $ch;
-  }
-}
-
-sub parser_tokenizer{
-  my $as = shift(@_);
-  my %token = ();
-
-  {
-    return undef if not defined (my $ch = shift(@$as));
-    if( $ch =~ /[a-zA-Z_]/){
-      %token = scan_name($ch, $as);
-    }
-    elsif( $ch =~ /[0-9]/){
-      %token = scan_number($ch, $as);
-    }
-    elsif( $ch =~ /["']/) {
-      %token = scan_string($ch, $as);
-    }
-    elsif( $ch !~ /\s/ ){
-      %token = scan_op($ch, $as);
-    }
-    else {
-      redo;
-    }
-  }
-
-  return \%token;
-}
-
 BEGIN {
 
   # args : file handle
   # return : parser object.
 sub parser_create{
   my $fh = shift(@_);
-  my @as = ();
   my @tokens = ();
   my %variable = ();
   my %assign = ();
   my %parser = (
     fh => $fh,
-    as => \@as,
-    line => 0,
     tokens => \@tokens,
     root => AST::create_node("block", ""),
     var_tbl => \%variable,
@@ -1065,134 +883,13 @@ sub parser_create{
   return \%parser;
 }
 
-sub parser_readline{
-  my $parser = shift(@_);
-  my $as = %$parser{as};
-  my $fh = %$parser{fh};
-  ${$parser}{line} = ${$parser}{line} + 1;
-  s/^\s+//;   # remove a leading whitespace
-  s/\s+$//;   # remove a tailing whitespace
-  s/^#!.*$//;  # remove a shell instruction
-  @$as = split(//, $_);
-}
-
-sub parser_comment{
-  my $parser = shift(@_);
-  my $as = %$parser{as};
-  my $fh = %$parser{fh};
-  my @block_seq = ();
-  my @pattern; 
-  my $ch;
-
-  my $str;
-  while(1){
-    if( $#$as < 0 ) {
-      return unless $_= <$fh>;
-      parser_readline( $parser );
-    }
-    while( defined( $ch =  shift( @$as ) ) ) { #remove leading space
-      if( not ($ch =~ /\s/) ) {
-        unshift( @$as, $ch );
-        last;
-      }
-    }
-    next if $#$as < 0;
-
-    @pattern = ( '-', '-', '[', '[' );
-    @block_seq = ();
-    while( defined( $ch =  shift( @$as ) ) ) { # comment pattern matching
-      my $seq;
-      last if( not defined( $seq = shift(@pattern) ) );
-      if( $ch eq $seq ){
-        push( @block_seq, $ch );
-      }else {
-        unshift( @$as, $ch );
-        last;
-      }
-    }
-
-    $str = join('', @block_seq );
-    if( $str eq "--" ) {
-      @$as = ();
-      next;
-    }
-    last if $str eq "--[[";
-    if( $str =~ /^--/ ) { # --[
-      @$as = ();
-      next;
-    }
-    while( defined( $ch = pop( @block_seq ) ) ){
-      unshift( @$as, $ch );
-    }
-    return;
-  } # while loop
-  
-  if( $str ne "--[[" ) { # if not block comment
-    for $ch ( pop( @block_seq ) ) {
-      unshift( @$as, $ch );
-    }
-    return;
-  }
-
-  @block_seq = ();
-  while( 1 ){
-    next if( not defined( $ch = shift( @$as ) ) );
-    my $num_of_seq = @block_seq;
-    if( $num_of_seq == 4) { # a <-- b c d <-- e
-      shift( @block_seq );
-    }
-    push( @block_seq, $ch );
-    $str = join( '', @block_seq );
-    if( $str eq "--]]" ) {
-      return;
-    }else {
-      redo;
-    }
-  }
-  continue {
-    return unless $_ = <$fh>;
-    parser_readline( $parser );
-    @block_seq = ();
-  }
-}
-
-
 # args : file handle
 # return : hash reference
 sub parser_getToken{
   my $parser = shift(@_);
-  my $as = %$parser{as};
-  my $fh = %$parser{fh};
-
-  parser_comment( $parser );
-  # TODO : processing [[]] double quote multiline string 
-  if( ${$as}[0] eq '[' && ${$as}[1] eq '[' ) {
-    my $token = scan_mstring( $parser );
-    stat_push( $parser, $token ) if $token;
-    return $token
-  }
-  if ( defined (my $ch = shift(@$as)) ) {
-    unshift( @$as, $ch );
-    my $token = parser_tokenizer($as); 
-    return parser_getToken( $parser ) unless $token;
-    stat_push( $parser, $token );
-    return $token;
-  }
-  return undef unless $fh;
-  while (<$fh>) {
-    ${$parser}{line} = ${$parser}{line} + 1;
-    s/^\s+//;   # remove a leading whitespace
-    s/\s+$//;   # remove a tailing whitespace
-    s/^#!.*$//;  # remove a shell instruction
-    s/^--.*$//;  # remove a comment line
-    next if length($_) == 0;
-    @$as = split(//, $_);
-    next unless ( my $token = parser_tokenizer($as) ); 
-    stat_push( $parser, $token );
-    return $token;
-  } 
-  # end of file
-  return undef;
+  my $token = $$parser{scanner}->getToken();
+  stat_push( $parser, $token ) if $token;
+  return $token;
 }
 
 sub parser_expect{
@@ -1208,7 +905,6 @@ sub parser_expect{
 sub parser_ungetToken{
   my $parser = shift(@_);
   my $token = shift(@_);
-  my $as = %$parser{as};
   my $name = %$token{name};
   my $value = %$token{value};
   my @arr=();
@@ -1221,12 +917,11 @@ sub parser_ungetToken{
     $name = "::" if $name eq "label";
     @arr = split(//, $name );
   }
-  unshift(@$as, @arr);
+  $$parser{scanner}->ungetToken( \@arr );
 }
 
 sub parser_ungetAllToken{
-  my $parser = shift(@_);
-  my $as = %$parser{as};
+  my $parser = shift;
   my $token;
 
   while( $token = stat_pop( $parser ) )
@@ -1240,7 +935,7 @@ sub parser_ungetAllToken{
       $name = "::" if $name eq "label";
       @arr = split( //, $name );
     }
-    unshift(@$as, @arr);
+    $$parser{scanner}->ungetToken( \@arr );
   }
 }
 
@@ -1497,7 +1192,7 @@ BEGIN{
     do => Parser_Do,
     for => Parser_For,
     repeat => Parser_Repeat,
-    label => Parser_Label,
+    "::" => Parser_Label,
     goto => Parser_Goto,
   );
   sub parser_stat_decision {
@@ -1570,9 +1265,9 @@ sub parser_break{
 
 sub parser_label{
   my $parser = shift;
-  parser_expect( $parser, "label");
+  parser_expect( $parser, "::");
   parser_func_wraper( $parser, Parser_Name );
-  parser_expect( $parser, "label" );
+  parser_expect( $parser, "::" );
   return Parser_Label;
 }
 
@@ -1620,7 +1315,7 @@ sub parser_func_wraper{
   ######################
   my $child = AST::create_node( $state_name_table[$state], "");
   AST::add_child( $root, $child );
-  ${$child}{line} = ${$parser}{line};
+  ${$child}{line} = ${$parser}{scanner}->get_line_number();
   ${$parser}{root} = $child; # swap the root with the child
   ######################
 
@@ -1689,7 +1384,6 @@ sub dump_table_tree{
   print "]}";
 }
 
-
 sub proc_argv{
   my $parser = shift;
   my $argv = shift;
@@ -1709,6 +1403,54 @@ sub proc_argv{
   }
 }
 
+sub parser_scanner_init{
+  my $parser = shift;
+  my %keywords =(
+      "and" => 1,
+      "break" => 1,
+      "do" => 1,
+      "else" => 1,
+      "elseif" => 1,
+      "end" => 1,
+      "false" => 1,
+      "for" => 1,
+      "function" => 1,
+      "if" => 1,
+      "in" => 1,
+      "local" => 1,
+      "nil" => 1,
+      "not" => 1,
+      "or" => 1,
+      "repeat" => 1,
+      "return" => 1,
+      "then" => 1,
+      "true" => 1,
+      "until" => 1,
+      "while" => 1,
+      "goto" => 1,
+    );
+  my %mlength_op = (
+      "..." => 1,
+      ".." => 1,
+      ">=" => 1,
+      "<=" => 1,
+      "==" => 1,
+      "~=" => 1,
+      "//" => 1,
+      "::" => 1,
+    );
+  my $scanner = Scanner->new( 
+    { 
+      fh=>$$parser{fh}, 
+      keywords => \%keywords,
+      mlength_op => \%mlength_op,
+      lcomment => "--",
+      bcomment_s => "--[[",
+      bcomment_e => "--]]",
+    } );
+  $$parser{scanner} = $scanner;
+}
+
 use Env;
 my $parser = undef;
 my @stat = ();
@@ -1718,6 +1460,7 @@ proc_argv( $parser, \@ARGV );
 open( my $fh, "< :encoding(UTF-8)", ${$parser}{fname} )
     || die "$0: can't open ${$parser}{fname} for reading: $!";
 ${$parser}{fh} = $fh;
+parser_scanner_init( $parser );
 my $root = ${$parser}{root};
 ${$root}{value} = ${$parser}{fname};
 

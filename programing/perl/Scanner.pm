@@ -1,0 +1,308 @@
+package Scanner;
+
+sub new{
+  my ($class, $args) = @_;
+  my $self = bless {
+            fh => $args->{fh},
+            keywords => $args->{keywords},
+            lcomment => $args->{lcomment},
+            bcomment_s => $args->{bcomment_s},
+            bcomment_e => $args->{bcomment_e},
+            mlength_op => $args->{mlength_op},
+            as => (),
+            line => 0
+            }, $class;
+}
+
+sub scan_name{
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my $keywords = $self->{keywords};
+  my %token;  
+  $token{name} .= "Name";
+  $token{value} .= shift( @$as );
+  while ( defined (my $ch = shift( @$as )) ){
+    if( $ch =~ /[a-zA-Z0-9_]/){
+      $token{value} .= $ch;
+    } else {
+      unshift(@$as, $ch);
+      last;
+    }
+  }
+
+  if( exists $$keywords{$token{value}} ){
+    $token{name} = $token{value};
+    $token{value} = "";
+  }
+
+  return wantarray ? %token : die;
+}
+
+sub scan_number {
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my %token;
+  $token{name} = "Number";
+  $token{value} = shift( @$as );
+  while ( defined (my $ch = shift( @$as ) ) ){
+    if( $ch =~ /[0-9\.xa-fA-F]/){
+      $token{value} .= $ch;
+    } else {
+      unshift(@$as, $ch);
+      last;
+    }
+  }
+  return wantarray ? %token : die;
+}
+
+sub scan_string{
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my %token;
+  $token{name} = "String";
+  my $quote = $token{value} = shift( @$as );
+  my $ch;
+  while ( defined ( $ch = shift( @$as ) ) ){
+    if( $ch =~ /\\/){
+      $token{value} .= $ch;
+      $ch = shift( @$as );
+      ( defined ($ch) ) ? ($token{value} .= $ch) : last;
+      next;
+    } 
+    if( $ch ne $quote ){
+      $token{value} .= $ch;
+    } 
+    else {
+      $token{value} .= $ch;
+      last;
+    }
+  }
+  die "missing quote ' " .$quote. " ' " if( $ch ne $quote );
+  return wantarray ? %token : die;
+}
+
+sub scan_op{
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my $mlen_op = $self->{mlength_op};
+  my %token;
+  $token{name} = shift( @$as );
+  $token{value} = "";
+  while ( defined ( my $ch = shift( @$as ) ) ){
+    if( $$mlen_op{$token{name}.$ch}  ){
+      $token{name} .= $ch;
+    } 
+    else {
+      unshift( @$as, $ch );
+      last;
+    } 
+  }
+  return wantarray ? %token : die;
+}
+
+# TODO: need to remove hard coding ']]' 
+sub scan_mstring{
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my $fh = $self->{fh};
+  my $ch;
+
+  my $str;
+  while(1){
+    if( $#$as < 0 ) {
+      return undef unless $_= <$fh>;
+      $self->readline( $_ );
+    }
+    $ch = shift( @{$as} );
+    if( $ch eq '\\' ) {
+      next if( $#$as < 0 );
+      $str .= $ch;
+      $str .= shift( @{$as} );
+      next;
+    }
+    if( $ch eq ']' && $#$as >= 0) {
+      if( ${$as}[0] == ']'){ # end of string
+        $str .= $ch;
+        $str .= shift( @{$as} );
+        my %token;
+        $token{name} = "String";
+        $token{value} = $str;
+        return \%token;
+      }
+    }
+    $str .= $ch;
+  }
+}
+
+sub parser_tokenizer{
+  my $self = shift;
+  my $as = \@{$self->{as}};
+  my %token = ();
+
+  {
+    return undef if not defined (my $ch = shift(@$as));
+    if( $ch =~ /[a-zA-Z_]/){
+      unshift( @$as, $ch );
+      %token = $self->scan_name( );
+    }
+    elsif( $ch =~ /[0-9]/){
+      unshift( @$as, $ch );
+      %token = $self->scan_number( ); 
+    }
+    elsif( $ch =~ /["']/) {
+      unshift( @$as, $ch );
+      %token = $self->scan_string( );
+    }
+    elsif( $ch !~ /\s/ ){
+      unshift( @$as, $ch );
+      %token = $self->scan_op( );
+    }
+    else {
+      redo;
+    }
+  }
+
+  return \%token;
+}
+
+sub readline{
+  my $self = shift;
+  my $str = shift;
+  $self->{line} = ${self}->{line} + 1;
+  @{$self->{as}} = split(//, $str);
+}
+
+sub get_line_number{
+  my $self = shift;
+  return $self->{line};
+}
+
+sub parser_comment{
+  my $self = shift(@_);
+  my $as = \@{$self->{as}};
+  my $fh = $self->{fh};
+  my $lcomment = $self->{lcomment};
+  my $bcomment_s = $self->{bcomment_s};
+  my $bcomment_e = $self->{bcomment_e};
+  my @block_seq = ();
+  my @pattern; 
+  my $ch;
+
+  my $str;
+  while(1){
+    if( $#$as < 0 ) {
+      return unless $_= <$fh>;
+      $self->readline( $_ );
+    }
+    while( defined( $ch =  shift( @$as ) ) ) { #remove leading space
+      if( not ($ch =~ /\s/) ) {
+        unshift( @$as, $ch );
+        last;
+      }
+    }
+    next if $#$as < 0;
+
+    @pattern = split( //, $bcomment_s );
+    @block_seq = ();
+    while( defined( $ch =  shift( @$as ) ) ) { # comment pattern matching
+      my $seq;
+      last if( not defined( $seq = shift(@pattern) ) );
+      if( $ch eq $seq ){
+        push( @block_seq, $ch );
+      }else {
+        unshift( @$as, $ch );
+        last;
+      }
+    }
+
+    $str = join('', @block_seq );
+    if( $str eq $lcomment ) {
+      @$as = ();
+      next;
+    }
+    last if $str eq $bcomment_s;
+    if( eval( "$str =~ /^$lcomment/" ) ) { # --[
+      @$as = ();
+      next;
+    }
+    while( defined( $ch = pop( @block_seq ) ) ){
+      unshift( @$as, $ch );
+    }
+    return;
+  } # while loop
+  
+  if( $str ne $bcomment_s ) { # if not block comment
+    for $ch ( pop( @block_seq ) ) {
+      unshift( @$as, $ch );
+    }
+    return;
+  }
+
+  @block_seq = ();
+  while( 1 ){
+    next if( not defined( $ch = shift( @$as ) ) );
+    my $num_of_seq = @block_seq;
+    if( $num_of_seq == 4) { # a <-- b c d <-- e
+      shift( @block_seq );
+    }
+    push( @block_seq, $ch );
+    $str = join( '', @block_seq );
+    if( $str eq $bcomment_e ) {
+      return;
+    }else {
+      redo;
+    }
+  }
+  continue {
+    return unless $_ = <$fh>;
+    $self->readline( $_ );
+    @block_seq = ();
+  }
+}
+
+
+# args : file handle
+# return : hash reference
+sub getToken{
+  my $self = shift(@_);
+  my $as = \@{$self->{as}};
+  my $fh = $self->{fh};
+  my $lcomment = $self->{lcomment};
+
+  $self->parser_comment( );
+  # TODO : processing [[]] double quote multiline string 
+  if( @{$as}[0] eq '[' && @{$as}[1] eq '[' ) {
+    my $token = $self->scan_mstring( );
+    return $token
+  }
+  if ( defined (my $ch = shift(@$as)) ) {
+    unshift( @$as, $ch );
+    my $token = $self->parser_tokenizer( ); 
+    return $self->getToken( ) unless $token;
+    #    stat_push( $parser, $token );
+    return $token;
+  }
+  while (<$fh>) {
+    ${$self}{line} = ${$self}{line} + 1;
+    s/^\s+//;   # remove a leading whitespace
+    s/\s+$//;   # remove a tailing whitespace
+    s/^#!.*$//;  # remove a shell instruction
+    eval("s/^$lcomment.*$//");  # remove a comment line
+    next if length($_) == 0;
+    @{$self->{as}} = split(//, $_);
+    next unless ( my $token = $self->parser_tokenizer() ); 
+    return $token;
+  } 
+  # end of file
+  return undef;
+}
+
+sub ungetToken{
+  my $self = shift;
+  my $arr = shift;
+  my $as = \@{$self->{as}};
+
+  unshift(@$as, @$arr);
+}
+
+1
