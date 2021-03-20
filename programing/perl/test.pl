@@ -177,11 +177,11 @@ sub proc_assign_table_member{
       my $name = $names[$#names];
       my $path = join( '/', @names );
       my $table = AST::create_node( $name, "v"); 
-      my $exist = AST::get_child( $table_var_root, $path );
+      my $exist = $$parser{ast}->get_child( $table_var_root, $path );
       if( not $exist ) {
         pop( @names );
         $path = join( '/', @names );
-        AST::add_child_by_path( $table_var_root, $table, $path);
+        $$parser{ast}->add_child_by_path( $table_var_root, $table, $path);
       }
     }
   }
@@ -200,13 +200,13 @@ sub proc_assign_func{
     my $name = $names[$#names];
     my $path = join( '/', @names );
     my $func = AST::create_node( $name, "f" );
-    my $exist = AST::get_child( $tbl_var_root, $path );
+    my $exist = $$parser{ast}->get_child( $tbl_var_root, $path );
     if( not $exist ) {
       pop( @names );
       $path = join( '/', @names );
       ${$func}{sline} = ${$node}{line};
       ${$func}{eline} = $block_end;
-      AST::add_child_by_path( $tbl_var_root, $func, $path);
+      $$parser{ast}->add_child_by_path( $tbl_var_root, $func, $path);
     }
   }
   my @var = ( $fname, "f", [${$node}{line}, $block_end]);
@@ -222,7 +222,7 @@ sub proc_assignment{
     last if ${$child}{name} eq "Explist";
     if( ${$child}{name} eq "Var" )
     {
-      my $is_funcdef = AST::get_child( $node, "Explist#" .$i . "/Exp/Function body");
+      my $is_funcdef = $$parser{ast}->get_child( $node, "Explist#" .$i . "/Exp/Function body");
       $i++;
       my $ret= get_varname( $child );
       if( $is_funcdef ) {
@@ -233,7 +233,7 @@ sub proc_assignment{
     }else { # 'Varlist'
       my $ret= get_varlist( $child );
       for my $var ( @{$ret} ){
-        my $is_funcdef = AST::get_child( $node, "Explist#" .$i . "/Exp/Function body");
+        my $is_funcdef = $$parser{ast}->get_child( $node, "Explist#" .$i . "/Exp/Function body");
         $i++;
         if( $is_funcdef ) {
           proc_assign_func( $parser, $is_funcdef, $var );
@@ -264,9 +264,10 @@ sub get_blockend{
 
 
 sub proc_is_funcdef{
+  my $parser = shift;
   my $node = shift; #Explist
   my $idx = shift;
-  my $child = AST::get_child( $node, "Exp#" . $idx . "/Function body" ); 
+  my $child = $$parser{ast}->get_child( $node, "Exp#" . $idx . "/Function body" ); 
   if( $child ) {
     return 1;
   }else {
@@ -275,9 +276,10 @@ sub proc_is_funcdef{
 }
 
 sub proc_is_table{
+  my $parser = shift;
   my $node = shift; #Explist
   my $idx = shift;
-  my $child = AST::get_child( $node, "Exp#" . $idx . "/Tableconstructor" ); 
+  my $child = $$parser{ast}->get_child( $node, "Exp#" . $idx . "/Tableconstructor" ); 
   if( $child ) {
     return 1;
   }else {
@@ -286,35 +288,35 @@ sub proc_is_table{
 }
 
 sub proc_table{
+  my $parser = shift;
   my $node = shift; #Exp
   my $table_root = shift;
-  my $table_node = AST::get_child( $node, "Tableconstructor" ); # Exp/Tableconstructor
+  my $table_node = $$parser{ast}->get_child( $node, "Tableconstructor" ); # Exp/Tableconstructor
   # field traverse
   my $idx = 0;
   for( my $i = 0;  ; $i++ ){
-    my $child = AST::get_child( $table_node, "Field#" . $i );  # Exp/Tableconstructor/Field
+    my $child = $$parser{ast}->get_child( $table_node, "Field#" . $i );  # Exp/Tableconstructor/Field
     last unless( $child );
-    my $name = AST::get_child( $child, "Name" );
+    my $name = $$parser{ast}->get_child( $child, "Name" );
     my $field;
     if( $name ) {
-      my $is_funcdef = AST::get_child( $child, "Exp/Function body");
+      my $is_funcdef = $$parser{ast}->get_child( $child, "Exp/Function body");
       if( $is_funcdef ) {
         $field = AST::create_node( ${$name}{value}, "f" );
-        ${$field}{eline} = get_blockend( AST::get_child( $is_funcdef, ".." ) );
+        ${$field}{eline} = get_blockend( $$parser{ast}->get_child( $is_funcdef, ".." ) );
         ${$field}{sline} = ${$is_funcdef}{line};
       }else {
         $field = AST::create_node( ${$name}{value}, "v" );
       }
     }else {
-      #$field = AST::create_node( "$idx", "");
       $idx++;
     }
-    my $nest_table = AST::get_child( $child, "Exp/Tableconstructor" );
+    my $nest_table = $$parser{ast}->get_child( $child, "Exp/Tableconstructor" );
     if( $nest_table ) {
-      $child = AST::get_child( $child, "Exp" );
-      proc_table( $child, $field );
+      $child = $$parser{ast}->get_child( $child, "Exp" );
+      proc_table( $parser, $child, $field );
     }
-    AST::add_child( $table_root, $field ) if $field;
+    $$parser{ast}->add_child( $table_root, $field ) if $field;
   }
 }
 
@@ -334,15 +336,15 @@ sub proc_function{
   my $node = shift;
   my $var_tbl = ${$parser}{var_tbl};
   my $table_var_root = ${$parser}{table_var_root};
-  my $funcname = AST::get_child( $node, "Funcname" );
-  my $class = AST::get_child( $node, "Funcname/Class" );
+  my $funcname = $$parser{ast}->get_child( $node, "Funcname" );
+  my $class = $$parser{ast}->get_child( $node, "Funcname/Class" );
   my $block_end = get_blockend( $node );
   my $name;
   if( $class ) {
     proc_self_to_class( $node, $$class{value} );
     my $table_path = $$class{value}; 
     my $table = AST::create_node( $$funcname{value}, "f"); 
-    AST::add_child_by_path( $table_var_root, $table, $table_path );
+    $$parser{ast}->add_child_by_path( $table_var_root, $table, $table_path );
     $name = $$class{value} . ":" . $$funcname{value};
   }else {
     $name = $$funcname{value};
@@ -360,30 +362,30 @@ sub proc_local{
   my $table_var_root = ${$parser}{table_var_root};
   my $child;
   my $block_end = get_blockend( $parent );
-  if( $child = AST::get_child( $node, "Name" ) ) { #function definition
+  if( $child = $$parser{ast}->get_child( $node, "Name" ) ) { #function definition
     my $block_end = get_blockend( $node );
     my @name = (${$child}{value}, "f", [${$child}{line}, $block_end]);
     push( @{${$var_tbl}{ $name[0] }}, \@name );
     return;
   }
-  $child = AST::get_child( $node, "Namelist" );
+  $child = $$parser{ast}->get_child( $node, "Namelist" );
   my $names = get_namelist( $child, $block_end ); # Namelist
-  $child = AST::get_child( $node, "Explist" );
+  $child = $$parser{ast}->get_child( $node, "Explist" );
   my $i = 0;
   for my $name ( @$names ) {
-    my $is_func = proc_is_funcdef( $child, $i ); #Explist
+    my $is_func = proc_is_funcdef( $parser, $child, $i ); #Explist
     if( $is_func ) {
       ${$name}[1] = "f";
       $block_end = get_blockend( $child );
       ${$name}[2][1] = $block_end;
     }
-    elsif ( proc_is_table( $child, $i ) ){ 
+    elsif ( proc_is_table( $parser, $child, $i ) ){ 
       ${$name}[1] = "t";
       $block_end = get_blockend( $child );
       ${$name}[2][1] = $block_end;
       my $table = AST::create_node( ${$name}[0], "v"); 
-      proc_table( AST::get_child( $child, "Exp#" . $i ), $table );
-      AST::add_child( $table_var_root, $table );
+      proc_table( $parser, $$parser{ast}->get_child( $child, "Exp#" . $i ), $table );
+      $$parser{ast}->add_child( $table_var_root, $table );
     }
     push( @{${$var_tbl}{ ${$name}[0] }}, $name );
     $i++;
@@ -635,7 +637,7 @@ BEGIN{
       parser_ungetToken( $parser, $token );
       last;
     }
-    AST::rearrange_ast2exp( ${$parser}{root} ) if $state == Parser_Unopexp;
+    $$parser{ast}->rearrange_ast2exp( ${$parser}{root} ) if $state == Parser_Unopexp;
     return Parser_Exp;
   }
 }
@@ -951,10 +953,10 @@ sub parser_assignment {
     # delete redundant depth functioncall/functioncall
     ###############################################
     my $root = ${$parser}{root};
-    my $child = AST::get_child( $root, "Functioncall" );
+    my $child = $$parser{ast}->get_child( $root, "Functioncall" );
     my $parent = ${$root}{parent};
     pop( @{${$parent}{child}} );
-    AST::add_child( ${${$parser}{root}}{parent}, $child );
+    $$parser{ast}->add_child( ${${$parser}{root}}{parent}, $child );
     ###############################################
     return Parser_Functioncall;
   }
@@ -1313,7 +1315,7 @@ sub parser_func_wraper{
   #create AST child node
   ######################
   my $child = AST::create_node( $state_name_table[$state], "");
-  AST::add_child( $root, $child );
+  $$parser{ast}->add_child( $root, $child );
   ${$child}{line} = ${$parser}{scanner}->get_line_number();
   ${$parser}{root} = $child; # swap the root with the child
   ######################
@@ -1467,6 +1469,52 @@ sub parser_scanner_init{
   $$parser{scanner} = $scanner;
 }
 
+sub parser_ast_init{
+  my $parser = shift;
+  my %rop_map = (
+    "^" => 1,
+    ".." => 1,
+  );
+
+  my %unary_op = (
+    "-" => 1,
+    "not" => 1,
+    "#" => 1,
+  );
+
+  my %biop_priority = (
+    "^" => 7,
+    "/" => 5,
+    "*" => 5,
+    "+" => 4,
+    "-" => 4,
+    ".." => 3,
+    "<" => 2,
+    "<=" => 2,
+    ">" => 2,
+    ">=" => 2,
+    "==" => 2,
+    "~=" => 2,
+    "and" => 1,
+    "or" => 0,
+  );
+
+  my %unary_priority = (
+    "-" => 6,
+    "not" => 6,
+    "#" => 6,
+  );
+
+  $$parser{ast} = AST->new(
+    {
+    rop_map => \%rop_map, 
+    unary_op => \%unary_op, 
+    biop_priority => \%biop_priority, 
+    unary_priority => \%unary_priority,
+  }
+  );
+}
+
 use Env;
 my $parser = undef;
 my @stat = ();
@@ -1477,6 +1525,7 @@ open( my $fh, "< :encoding(UTF-8)", ${$parser}{fname} )
     || die "$0: can't open ${$parser}{fname} for reading: $!";
 ${$parser}{fh} = $fh;
 parser_scanner_init( $parser );
+parser_ast_init( $parser );
 my $root = ${$parser}{root};
 ${$root}{value} = ${$parser}{fname};
 

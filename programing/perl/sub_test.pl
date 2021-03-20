@@ -76,32 +76,74 @@ while ( $token = $scanner->getToken() ){
 }
 
 
-#sub ast_tree_dump {
-#  my $root = shift(@_);
-#  my $prefix = shift( @_ );
-#  print $prefix . ${$root}{name} . "\n ";
-#  for my $child( @{${$root}{child}} ){
-#    ast_tree_dump( $child, $prefix . "  "  );
-#  }
-#}
-#
-#my $root = AST::create_node("root", "");
-#my $child = AST::create_node( "leaf0", "" );
-#AST::add_child_by_path( $root, $child, "child/grand_child0" );
-#$child = AST::create_node( "leaf1", "" );
-#AST::add_child_by_path( $root, $child, "child/grand_child1" );
-#$child = AST::create_node( "grand child", "" );
-#AST::add_child_by_path( $root, $child, "child" );
-#$child = AST::create_node( "leaf", "" );
-#AST::add_child_by_path( $root, $child, "child/grand child#2" );
-#AST::add_child_by_path( $root, $child, "child/grand child#0" );
-#ast_tree_dump( $root, "" );
-#$child = AST::get_child( $root, "child/grand_child1" );
-#$child = AST::get_child( $child, "../grand child#2" );
-#print "\n\n\n=========\n";
-#ast_tree_dump( $child, "" );
-#print "\n\n\n=========\n";
-#AST::dump( $root, 2 );
+my %rop_map = (
+  "^" => 1,
+  ".." => 1,
+);
+
+my %unary_op = (
+  "-" => 1,
+  "not" => 1,
+  "#" => 1,
+);
+
+
+my %biop_priority = (
+  "^" => 7,
+  "/" => 5,
+  "*" => 5,
+  "+" => 4,
+  "-" => 4,
+  ".." => 3,
+  "<" => 2,
+  "<=" => 2,
+  ">" => 2,
+  ">=" => 2,
+  "==" => 2,
+  "~=" => 2,
+  "and" => 1,
+  "or" => 0,
+);
+
+my %unary_priority = (
+  "-" => 6,
+  "not" => 6,
+  "#" => 6,
+);
+
+my $ast = AST->new(
+  rop_map => \%rop_map, 
+  unary_op => \%unary_op, 
+  biop_priority => \%biop_priority, 
+  unary_priority => \%unary_priority,
+);
+
+sub ast_tree_dump {
+  my $root = shift(@_);
+  my $prefix = shift( @_ );
+  print $prefix . ${$root}{name} . "\n ";
+  for my $child( @{${$root}{child}} ){
+    ast_tree_dump( $child, $prefix . "  "  );
+  }
+}
+
+my $root = AST::create_node("root", "");
+my $child = AST::create_node( "leaf0", "" );
+$ast->add_child_by_path( $root, $child, "child/grand_child0" );
+$child = AST::create_node( "leaf1", "" );
+$ast->add_child_by_path( $root, $child, "child/grand_child1" );
+$child = AST::create_node( "grand child", "" );
+$ast->add_child_by_path( $root, $child, "child" );
+$child = AST::create_node( "leaf", "" );
+$ast->add_child_by_path( $root, $child, "child/grand child#2" );
+$ast->add_child_by_path( $root, $child, "child/grand child#0" );
+ast_tree_dump( $root, "" );
+$child = $ast->get_child( $root, "child/grand_child1" );
+$child = $ast->get_child( $child, "../grand child#2" );
+print "\n\n\n=========\n";
+ast_tree_dump( $child, "" );
+print "\n\n\n=========\n";
+AST::dump( $root, 2 );
 #
 #
 #

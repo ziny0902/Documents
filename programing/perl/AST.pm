@@ -1,134 +1,93 @@
 package AST;
 
-sub create_node {
-  my $name = shift( @_ );
-  my $value = shift( @_ );
-  my @arr = ();
-  my %root = (
-    child => \@arr,
-    name => $name,
-    value => $value,
-    line => 0,
-  );
-  return \%root;
+sub new{
+  my ($class, $args) = @_;
+  my $self = bless {
+            rop_map => $args->{rop_map},
+            unary_op => $args->{unary_op},
+            biop_priority => $args->{biop_priority},
+            unary_priority => $args->{unary_priority},
+            }, $class;
 }
 
 sub add_child {
+  my $self = shift;
   my $root = shift( @_ );
   my $child_node = shift( @_ );
   push ( @{ ${$root}{child} }, $child_node );
   ${$child_node}{parent} = $root;
 } 
 
-my %rop_map = (
-  "^" => 1,
-  ".." => 1,
-);
-
-my %unary_op = (
-  "-" => 1,
-  "not" => 1,
-  "#" => 1,
-);
-
 sub get_priority{
+  my $self = shift;
   my $operator = shift;
+  my $biop_priority = $self->{biop_priority};
+  my $unary_priority = $self->{unary_priority};
+  my $num_of_operand = $#{$operator->{child}} + 1;
   my $op = ${$operator}{value};
-  if( $op eq '^' ) {
-    return 7;
+  my $priority = $biop_priority->{$op};
+  return $priority if defined $priority;
+  if( $num_of_operand == 1){ #unary op
+    my $priority = $unary_priority->{$op};
+    return $priority if defined $priority;
   }
-  if( $op eq '-' && $#{${$operator}{child}} == 0){
-    return 6;
-  }
-  if( $op eq 'not' || $op eq "#") {
-    return 6;
-  }
-  if( $op =~ /[\/\*]/ ) {
-    return 5;
-  }
-  if( $op =~ /[\+-]/ ) {
-    return 4;
-  }
-  if( $op eq '..' ) {
-    return 3;
-  }
-  if( $op eq '<' ) {
-    return 2;
-  }
-  if( $op eq '<=' ) {
-    return 2;
-  }
-  if( $op eq '>' ) {
-    return 2;
-  }
-  if( $op eq '>=' ) {
-    return 2;
-  }
-  if( $op eq '==' ) {
-    return 2;
-  }
-  if( $op eq '~=' ) {
-    return 2;
-  }
-  if( $op eq 'and') {
-    return 1;
-  }
-  if( $op eq 'or' ) {
-    return 0;
-  }
-  return 10 
+  return 10; 
 }
 
 sub left_op{
+  my $self = shift;
   my $operands = shift;
   my $op = shift;
   my $left = shift;
   my $right = shift;
 
-  my $lop_priority = get_priority( $left );
-  my $op_priority = get_priority( $op );
+  my $lop_priority = $self->get_priority( $left );
+  my $op_priority = $self->get_priority( $op );
   if( $lop_priority < $op_priority ) {
     my $lr = pop( @{${$left}{child}} );
     my $ll = pop( @{${$left}{child}} );
-    add_exp_node( $op, $lr, $right );
-    #add_exp_node( $left, $ll, $op );
+    $self->add_exp_node( $op, $lr, $right );
     if( $ll ) {
-      add_exp_node( $left, $ll, $op );
+      $self->add_exp_node( $left, $ll, $op );
     }else {
-      add_child( $left, $op );
+      $self->add_child( $left, $op );
     }
     unshift( @$operands, $left );
   }else {
-    add_exp_node( $op, $left, $right);
+    $self->add_exp_node( $op, $left, $right);
     unshift( @$operands, $op );
   }
 }
 
-
 sub right_op{
+  my $self = shift;
   my $operators= shift;
   my $operands = shift;
+  my $rop_map = $self->{rop_map};
 
   my $op = shift( @$operators );
   my $left = shift( @$operands );
-  if( $#{$operators} >= 0 && $rop_map{${${$operators}[0]}{value}} ) {
-    right_op( $operators, $operands );
+  if( $#{$operators} >= 0 && $rop_map->{${${$operators}[0]}{value}} ) {
+    $self->right_op( $operators, $operands );
   }
   my $right = shift( @$operands );
-  left_op( $operands, $op, $left, $right );
+  $self->left_op( $operands, $op, $left, $right );
 }
 
 sub rearrange_ast2exp{
+  my $self = shift;
   my $root = shift;
   my $childs = ${$root}{child};
   my @operands = ();
   my @operators = ();
   my $num = $#{$childs};
+  my $rop_map = $self->{rop_map};
+  my $unary_op = $self->{unary_op};
   for( $i=0; $i <= $num; $i++ ){
     if( $i%2 == 0 ) {
       my $operand = shift( @$childs );
-      if( $unary_op{${$operand}{value}} ) {
-        add_child( $operand, shift( @$childs ) );
+      if( $unary_op->{${$operand}{value}} ) {
+        $self->add_child( $operand, shift( @$childs ) );
         $num--;
       }
       push( @operands,  $operand );
@@ -137,38 +96,40 @@ sub rearrange_ast2exp{
     }
   }
   while( my $operator = shift( @operators )  ) {
-    if( $rop_map{$operator{value}} ){
-      right_op( \@operators, \@operands );
+    if( $rop_map->{$operator{value}} ){
+      $self->right_op( \@operators, \@operands );
     }
     my $left = shift( @operands );
-    if( $#operators >= 0 && $rop_map{${$operators[0]}{value}} ){
-      right_op( \@operators, \@operands );
+    if( $#operators >= 0 && $rop_map->{${$operators[0]}{value}} ){
+      $self->right_op( \@operators, \@operands );
     }
     my $right = shift( @operands );
-    left_op( \@operands, $operator, $left, $right); 
+    $self->left_op( \@operands, $operator, $left, $right); 
   }
-  add_child( $root, shift( @operands ) );
+  $self->add_child( $root, shift( @operands ) );
 }
 
 sub add_exp_node{
+  my $self = shift;
   my $operator = shift;
   my $left = shift;
   my $right = shift;
 
-  add_child( $operator, $left );
-  add_child( $operator, $right );
+  $self->add_child( $operator, $left );
+  $self->add_child( $operator, $right );
 }
 
-
 sub add_child_by_path{
+  my $self = shift;
   my $root = shift;
   my $child = shift;
   my $path = shift;
-  my $target_root = create_path( $root, $path );
-  add_child( $target_root, $child );
+  my $target_root = $self->create_path( $root, $path );
+  $self->add_child( $target_root, $child );
 }
 
 sub create_path{
+  my $self = shift;
   my $root = shift;
   my $path = shift;
   my @as = split(/\//, $path);
@@ -192,7 +153,7 @@ sub create_path{
       my $child;
       for ( ; $i < $idx; $i++ ){
         $child = create_node( $name, "" );
-        add_child( $root, $child );
+        $self->add_child( $root, $child );
       }
       $root = $child;
       next;
@@ -203,6 +164,7 @@ sub create_path{
 }
 
 sub get_child{
+  my $self = shift;
   my $root = shift;
   my $path = shift;
   my @as = split(/\//, $path);
@@ -233,10 +195,24 @@ sub get_child{
 }
 
 sub add_neighbor {
-  my $self = shift( @_ );
+  my $self = shift;
+  my $node = shift( @_ );
   my $child_node = shift( @_ );
-  push ( @{ ${${$self}{parent}}{child} }, $child_node );
-  ${$child_node}{parent} = ${$self}{parent};
+  push ( @{ ${${$node}{parent}}{child} }, $child_node );
+  ${$child_node}{parent} = ${$node}{parent};
+}
+
+sub create_node {
+  my $name = shift( @_ );
+  my $value = shift( @_ );
+  my @arr = ();
+  my %root = (
+    child => \@arr,
+    name => $name,
+    value => $value,
+    line => 0,
+  );
+  return \%root;
 }
 
 sub dump_hash{
