@@ -1,3 +1,4 @@
+local a, b
 a = 7^3+(a + b) * e - -c^2^3 == d / 8^3
 local cmd_result = tostring((ls ('-l ' .. path) : awk (action) ))
 str:match( ("([^"..sep.."]*)"..sep):rep(nsep) )

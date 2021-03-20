@@ -799,7 +799,7 @@ sub parser_local {
   if ( ${$token}{name} eq "Name" ) {
     parser_func_wraper( $parser, Parser_Namelist );
     $token = parser_getToken($parser);
-    if ( ${$token}{name} = "=" ){ # [ = explist ]
+    if ( ${$token}{name} eq "=" ){ # [ = explist ]
       stat_pop( $parser );
       parser_func_wraper( $parser, Parser_Explist );
     }else {

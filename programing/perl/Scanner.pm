@@ -110,7 +110,9 @@ sub scan_quote_string{
   while(1){
     if( $#$as < 0 ) {
       die "syntax error:  a quoted string is not enclosed" unless $_= <$fh>;
+      s/^#!.*$// if $self->{line} == 0; # remove a shell instruction
       $self->readline( $_ );
+      next if( $#$as < 0 );
       $pattern=();
     }
     $ch = shift( @{$as} );
@@ -188,7 +190,9 @@ sub parser_comment{
   while(1){
     if( $#$as < 0 ) {
       return unless $_= <$fh>;
+      s/^#!.*$// if $self->{line} == 0; # remove a shell instruction
       $self->readline( $_ );
+      next if( $#$as < 0 );
     }
     while( defined( $ch =  shift( @$as ) ) ) { #remove leading space
       if( not ($ch =~ /\s/) ) {
@@ -217,7 +221,7 @@ sub parser_comment{
       next;
     }
     last if $str eq $bcomment_s;
-    if( eval( "$str =~ /^$lcomment/" ) ) { # --[
+    if( eval( '$str =~ "^$lcomment"' ) ) { # --[
       @$as = ();
       next;
     }
@@ -278,7 +282,6 @@ sub getToken{
     ${$self}{line} = ${$self}{line} + 1;
     s/^\s+//;   # remove a leading whitespace
     s/\s+$//;   # remove a tailing whitespace
-    s/^#!.*$//;  # remove a shell instruction
     eval("s/^$lcomment.*$//");  # remove a comment line
     next if length($_) == 0;
     @{$self->{as}} = split(//, $_);
