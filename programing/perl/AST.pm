@@ -1,4 +1,6 @@
 package AST;
+use strict;
+use warnings;
 
 sub new{
   my ($class, $args) = @_;
@@ -83,7 +85,9 @@ sub rearrange_ast2exp{
   my $num = $#{$childs};
   my $rop_map = $self->{rop_map};
   my $unary_op = $self->{unary_op};
-  for( $i=0; $i <= $num; $i++ ){
+
+  return if( $num < 0 ); # null exp
+  for( my $i=0; $i <= $num; $i++ ){
     if( $i%2 == 0 ) {
       my $operand = shift( @$childs );
       if( $unary_op->{${$operand}{value}} ) {
@@ -96,15 +100,22 @@ sub rearrange_ast2exp{
     }
   }
   while( my $operator = shift( @operators )  ) {
-    if( $rop_map->{$operator{value}} ){
+    if( $rop_map->{${$operator}{value}} ){
+      unshift( @operators, $operator );
       $self->right_op( \@operators, \@operands );
+      next;
     }
     my $left = shift( @operands );
     if( $#operators >= 0 && $rop_map->{${$operators[0]}{value}} ){
       $self->right_op( \@operators, \@operands );
     }
     my $right = shift( @operands );
-    $self->left_op( \@operands, $operator, $left, $right); 
+    if( defined $right ){
+      $self->left_op( \@operands, $operator, $left, $right); 
+    }
+    else {
+      unshift( @operands, $left );
+    }
   }
   $self->add_child( $root, shift( @operands ) );
 }
@@ -179,7 +190,7 @@ sub get_child{
       $root = ${$root}{parent};
       next;
     }
-    for $node ( @{${$root}{child}} ){
+    for my $node ( @{${$root}{child}} ){
       if( ${$node}{name} eq $name ){
         $i++;
         if( $i == $idx ){
@@ -220,7 +231,7 @@ sub dump_hash{
   my $indent_str = shift;
   my $indent = shift;
   my @keys = sort( keys %{$hash} );
-  for( $i = 0; $i < $indent; $i++ ) {
+  for( my $i = 0; $i < $indent; $i++ ) {
     $indent_str = $indent_str . " ";
   }
   print $indent_str . "{\n";
@@ -261,7 +272,7 @@ sub dump_array{
   my $indent_str = shift;
   my $indent = shift;
   return if $#{$arr} < 0;
-  for( $i = 0; $i < $indent; $i++ ) {
+  for( my $i = 0; $i < $indent; $i++ ) {
     $indent_str = $indent_str . " ";
   }
   print $indent_str . "[\n";

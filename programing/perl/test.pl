@@ -1,5 +1,7 @@
 #!/usr/bin/perl -I.
 use 5.32.0;
+use strict;
+use warnings;
 
 use enum qw(
     :Parser_=0 Stat Name Namelist Prefixexp Varlist Var Args Exp  
@@ -173,6 +175,7 @@ sub proc_assign_table_member{
   my $assign_tbl = ${$parser}{assign_tbl};
   for my $key ( keys %$assign_tbl ){
     if( $key =~ /\./ ) {
+      $key =~ s/\[.*\]/[]/g;
       my @names = split( /\./, $key );
       my $name = $names[$#names];
       my $path = join( '/', @names );
@@ -431,7 +434,8 @@ sub ast_tree_dump {
     print "]\n";
   }
   for my $child( @{${$root}{child}} ){
-    if( ${$child}{name} eq "Assignment" ) {
+    if( not defined ${$child}{name} ){
+    }elsif( ${$child}{name} eq "Assignment" ) {
       proc_assignment( $parser, $child );
     }elsif( ${$child}{name} eq "Local" ) {
       proc_local( $parser, $child );
@@ -447,12 +451,12 @@ sub ast_tree_dump {
 sub ast2json {
   my $root = shift(@_);
   my $value = ${$root}{value};
-  #print "{ \"Name\": \"" . ${$root}{name} . "\", ";
   return unless ${$root}{name};
   print "{ \"" . ${$root}{name} . "\":{ ";
   if ( $value ) {
     $value =~ s/\\/\\\\/g;
     $value =~ s/"/\\"/g;
+    $value =~ s/\n/\\n/g;
     print "\"Value\":\"" . $value . "\", ";
   }
   print "\"Line\": " . ${$root}{line} . ", ";
@@ -629,7 +633,7 @@ BEGIN{
       }
       $state = Parser_Unopexp;
       $token = parser_getToken($parser);
-      if( defined $biop{%$token{name}} ) # exp biop exp
+      if( defined $token && defined $biop{%$token{name}} ) # exp biop exp
       {
         parser_func_wraper( $parser, Parser_Op );
         next;
@@ -637,7 +641,7 @@ BEGIN{
       parser_ungetToken( $parser, $token );
       last;
     }
-    $$parser{ast}->rearrange_ast2exp( ${$parser}{root} ) if $state == Parser_Unopexp;
+      $$parser{ast}->rearrange_ast2exp( ${$parser}{root} ) if $state == Parser_Unopexp;
     return Parser_Exp;
   }
 }
@@ -731,11 +735,18 @@ BEGIN{
   $transition[Parser_Functioncall] = {
     "." => Parser_Var,
     "[" => Parser_Unopexp,
-    ":" => Parser_Name,
+    ":" => Parser_Functioncall,
+    "(" => Parser_Args,
+    "String" => Parser_Args,
+    "{" => Parser_Args,
   };
   $transition[Parser_Exp] = {
     "." => Parser_Var,
     "[" => Parser_Unopexp,
+    ":" => Parser_Functioncall,
+    "(" => Parser_Args,
+    "String" => Parser_Args,
+    "{" => Parser_Args,
   };
   sub parser_prefixexp{
     my $parser = shift(@_);
@@ -749,15 +760,16 @@ BEGIN{
       }
       $state = $transition[$state]{$name};
       if ( $state == Parser_Functioncall) {
-        parser_func_wraper( $parser, Parser_Name);
+        stat_pop( $parser );
+        parser_func_wraper( $parser, Parser_Class);
         parser_func_wraper( $parser, Parser_Args);
       }else {
         parser_func_wraper( $parser, $state);
       }
-      if ( $name == "[" && $state == Parser_Unopexp) {
+      if ( $name eq "[" && $state == Parser_Unopexp) {
         $state = Parser_Var;
       }
-      if ( $name == "(" && $state == Parser_Unopexp) {
+      if ( $name eq "(" && $state == Parser_Unopexp) {
         $state = Parser_Exp;
       }
       if ( $state == Parser_Args) {
@@ -866,8 +878,6 @@ sub parser_field {
   return Parser_Field;
 }
 
-BEGIN {
-
   # args : file handle
   # return : parser object.
 sub parser_create{
@@ -914,12 +924,13 @@ sub parser_ungetToken{
 
   stat_pop( $parser ) if %$token{name};
   # if name == "Name", "Number", "String" then unshift value.
-  if ($name eq "Name" || $name eq "Number" || $name eq "String" ) {
+  return if( not defined $token);
+  if( defined $name && ($name eq "Name" || $name eq "Number" || $name eq "String") ) {
     @arr = split(//, $value );
-  } else {
+  } elsif( defined $name ){
     @arr = split(//, $name );
   }
-  $$parser{scanner}->ungetToken( \@arr );
+  $$parser{scanner}->ungetToken( \@arr ) if $#arr >=0 ;
 }
 
 sub parser_ungetAllToken{
@@ -940,14 +951,13 @@ sub parser_ungetAllToken{
   }
 }
 
-}
-
 sub parser_assignment {
   my $parser = shift(@_);
   parser_func_wraper( $parser, Parser_Prefixexp);
   #parser_func_wraper( $parser, Parser_Varlist );
   my $token = parser_getToken($parser);
-  if( %$token{name} ne "=" && %$token{name} ne "," ) {
+  if( ( not defined ${$token}{name} )
+      || ( %$token{name} ne "=" && %$token{name} ne "," ) ) {
     parser_ungetToken( $parser, $token );
     ###############################################
     # delete redundant depth functioncall/functioncall
@@ -1132,7 +1142,7 @@ BEGIN {
       last unless( $state = $transition[$state]{$name} );
     }
     parser_error $parser,  "syntax error: Invalid function name\n"
-      if ( $state == Parser_Funcname );
+      if ( defined $state && $state == Parser_Funcname );
     $name = %$token{name};
     if( $name eq ":" ) { # ':'Name
       stat_pop( $parser); # remove ':'
@@ -1296,7 +1306,8 @@ sub parser_func_wraper{
   my $name = ${$token}{name};
   my $root = ${$parser}{root};
   my $value = ${$token}{value};
-  if( $name =~ /[\.\:]/ && $state == Parser_Name ){
+  if( not defined $name ) {
+  }elsif( $name =~ /[\.\:]/ && $state == Parser_Name ){
    stat_push( $parser, $token ); 
    parser_func_wraper( $parser, Parser_Op );
   }
@@ -1333,7 +1344,7 @@ sub parser_func_wraper{
   ${$child}{value} = stat_dumptostring( $parser );
   ${$child}{name} = $state_name_table[$ret_state];
   ######################
-  if( ($name eq "(" || $name eq "[") && $state == Parser_Unopexp )
+  if( defined $name && ($name eq "(" || $name eq "[") && $state == Parser_Unopexp )
   {
     #print __LINE__ . " wrapper [$name]\n";
     parentheses_check( $parser, $name );
@@ -1390,7 +1401,7 @@ sub proc_argv{
   my $argv = shift;
 
   $$parser{fname} = "";
-  ${$parser}{argv} = 0x00;
+  ${$parser}{opt} = 0x00;
   for my $v (@$argv){
     if( $v =~ /^-/){
       my @va = split( //, $v );
