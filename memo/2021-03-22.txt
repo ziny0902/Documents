@@ -1,0 +1,17 @@
+package mode '['  Tag:julia
+shell mode ';'  Tag:julia
+shell mode exit: pressing a backspace at the beginning of the line  Tag:julia
+change working directory: cd("../working directory")  Tag:julia
+script loading in julia mode: include("julia filename")  Tag:julia
+package add : add "package name" in package mode  Tag:julia
+krunner open : Alt-F2  Tag:KDE
+geometric interpretation of partial derivative : https://www.youtube.com/watch\?v\=0hm1vlMQ-PY  Tag:math
+```julia
+using ForwardDiff  Tag:julia
+f(x,y)=√(4 - x^2 - y^2)  Tag:julia
+f_v(v) = f(v[1], v[2])  Tag:julia
+Δf(v) = ForwardDiff.gradient(f_v, v)  Tag:julia
+Δf([1,1])  Tag:julia
+```
+[Numerical Integration](https://www.whitman.edu/mathematics/calculus_online/section08.06.html)  Tag:math
+[partial differentiation](https://www.whitman.edu/mathematics/calculus_online/section14.03.html)  Tag:math

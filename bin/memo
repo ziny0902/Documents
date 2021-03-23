@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+args=$@
+file=$(date \
+| sed "s/\([0-9]*\)[^0-9]*\([0-9]*\)[^0-9]*\([0-9]*\).*/\1-\2-\3.txt/" \
+| xargs -I% echo "${HOME}/Documents/memo/%") 
+echo "$args" >> $file
