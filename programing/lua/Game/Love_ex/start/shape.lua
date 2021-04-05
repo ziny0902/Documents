@@ -110,7 +110,7 @@ function Shape.SAT(a, b)
       ax = Matrix.new({{0, -1},{1, 0}}) 
           * ( Matrix.col(b, i) - Matrix.col(b, i+1) )
     end
-    result = Shape.isOverlaped(ax, b, a)
+    result, overlapPt = Shape.isOverlaped(ax, b, a)
     if result == false then
       return false, -1
     end
@@ -159,7 +159,7 @@ local function find_collision_pt(a, b)
     local col = Matrix.col(a, i)
     col = Matrix.join(col, col)
     local ret = collisonTest( col, b) 
-    --ret = Shape.SAT( col, b )
+    --local ret = Shape.SAT( col, b )
     if ret then
       pt = i
       break
@@ -183,8 +183,8 @@ local function gen_adjacent_vect(vect, col)
 end
 
 local function find_segment_intersection( A, B )
---  print ( A )
---  print ( B )
+  print ( A )
+  print ( B )
   local numerator_t = 
     ( A[1][1] - B[1][1] ) * ( B[2][1] - B[2][2] )
     - ( A[2][1] - B[2][1] ) * ( B[1][1] - B[1][2] )
@@ -200,21 +200,24 @@ local function find_segment_intersection( A, B )
   end
   local t = math.floor( 0.5+100*(numerator_t / denominator) ) /100
   local u = math.floor( 0.5+100*(numerator_u / denominator) ) /100
---  print ( "t, u : ", t, u )
-  if  ( t > 1 or u < 0 or u > 1  ) then
-    return nil 
-  end
+  print ( "t, u : ", t, u )
   local x = A[1][1] + t * ( A[1][2] - A[1][1] )
   local y = A[2][1] + t * ( A[2][2] - A[2][1] )
   x = math.floor( x*100+0.5 )/100
   y = math.floor( y*100+0.5 )/100
 
+  print ( "x, y : ", x, y )
+  if  ( t <= 0 or t >= 0.99 or u <= 0 or u >= 0.99  ) then
+    return nil 
+  end
   -- compensate conversion error 
   -- minimum error : 1 pixel
   if math.abs( A[1][2] - x ) < 0.01  and math.abs( A[2][2] - y ) < 0.01 then
     return nil
   end
---  print ( "x, y : ", x, y )
+  if math.abs( A[1][1] - x ) < 0.01  and math.abs( A[2][1] - y ) < 0.01 then
+    return nil
+  end
   return Matrix.new( {{x}, {y}} )
 end
 
@@ -271,11 +274,11 @@ local function cal_shift(pt, boundary, dx, dy, sign)
   norm = Matrix.transpos( 
     Matrix.new( { {dx }, {dy } } ) 
     ) * norm * norm
---  print("sign: ", sign)
+  print("sign: ", sign)
   shift = ortho - norm 
   shift = -1*sign*shift
---  print(" shift : " )
---  print( shift )
+  print(" shift : " )
+  print( shift )
   return shift
 end
 
@@ -379,14 +382,12 @@ function Shape:resolve( dx, dy, obj )
     pt = find_collision_pt(obj.mat, self.mat)
     sortedPtsB = {pt}
     if pt < 0 then
-      self:move( -dx, -dy )
       return
     end
     local col = Matrix.col(obj.mat, pt)
     dist, sortedPtsA = Shape.pt2ptSort(col, self.mat)
     gen_adjacent_vect( sortedPtsA, #self.mat[1] )
     gen_adjacent_vect( sortedPtsB, #obj.mat[1] )
-    self:move( -dx, -dy )
     sign = -1
     movement = slide_object( sortedPtsB, obj.mat, sortedPtsA, self.mat, -dx, -dy, sign )
   else
@@ -398,13 +399,13 @@ function Shape:resolve( dx, dy, obj )
     gen_adjacent_vect( sortedPtsB, #obj.mat[1] )
     movement = slide_object( sortedPtsA, self.mat, sortedPtsB, obj.mat, dx, dy, sign )
   end
+  print( "movement" )
+  print( movement )
   if not movement then
     self:move( -dx, -dy)
     return nil
   end
   Matrix.shift( self.mat, movement )
---  print( "boundary" )
---  print( boundary )
   return nil 
 end
 
