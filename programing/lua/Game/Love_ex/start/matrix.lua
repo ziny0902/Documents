@@ -52,7 +52,7 @@ local function sub(left, right)
     ret.arr[i]={}
     for j = 1, c, 1 do
       ret.arr[i][j] 
-      = math.floor( ( left.arr[i][j] - right.arr[i][j] )*1000 + 0.5 )/1000
+      = math.floor( ( left.arr[i][j] - right.arr[i][j] )*100 + 0.5 )/100
     end
   end
   return ret

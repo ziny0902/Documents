@@ -22,8 +22,8 @@ function Shape:new( vertices )
 end
 
 function Shape:move( x_inc, y_inc )
-  x_inc = math.floor(x_inc*1000+0.5)/1000
-  y_inc = math.floor(y_inc*1000+0.5)/1000
+  x_inc = math.floor(x_inc*100+0.5)/100
+  y_inc = math.floor(y_inc*100+0.5)/100
   shiftx = x_inc * Matrix.ones(1, #self.mat[1])
   shifty = y_inc * Matrix.ones(1, #self.mat[1])
   self.mat = self.mat + Matrix.new( { shiftx[1], shifty[1] } )
@@ -143,11 +143,11 @@ function Shape.pt2ptSort(pt, mat)
 end
 
 function Shape.vertice2vectorDist( vect, vertices)
-  local ax = (1/1000)*( 1000*Matrix.col(vect, 2) - 1000*Matrix.col(vect, 1))
-  local len = vect_len( ax ) 
+  local ax = Matrix.col(vect, 2) - Matrix.col(vect, 1)
+  local len = math.floor(100 * vect_len( ax ) + 0.5)/100
   local norm = (1/len)*ax
   local w = vertices - Matrix.col(vect, 1)
-  len = Matrix.transpos(w) * norm
+  len = math.floor( Matrix.transpos(w) * norm * 100 + 0.5 )/100
   -- caculate orthogonal vector
   local ortho = w - len*norm
   return ( ortho[1][1]^2 + ortho[2][1]^2 ), ortho
@@ -159,6 +159,7 @@ local function find_collision_pt(a, b)
     local col = Matrix.col(a, i)
     col = Matrix.join(col, col)
     local ret = collisonTest( col, b) 
+    --ret = Shape.SAT( col, b )
     if ret then
       pt = i
       break
@@ -182,8 +183,8 @@ local function gen_adjacent_vect(vect, col)
 end
 
 local function find_segment_intersection( A, B )
-  print ( A )
-  print ( B )
+--  print ( A )
+--  print ( B )
   local numerator_t = 
     ( A[1][1] - B[1][1] ) * ( B[2][1] - B[2][2] )
     - ( A[2][1] - B[2][1] ) * ( B[1][1] - B[1][2] )
@@ -193,26 +194,27 @@ local function find_segment_intersection( A, B )
   local denominator =
     ( A[1][1] - A[1][2] ) * ( B[2][1] - B[2][2] )
     - ( A[2][1] - A[2][2]) * ( B[1][1] - B[1][2] )
-  denominator = math.floor(denominator*1000 + 0.5)/1000
+  denominator = math.floor(denominator*100 + 0.5)/100
   if denominator == 0 then
-    if (A[1][1] -A[1][2] + B[1][1] - B[1][2] ) == 0 then
-      return Matrix.new( { {A[1][1]+B[1][1] - A[1][1]}, {A[2][1]} })
-    else
-      return Matrix.new( { {A[1][1]}, {A[2][1] + B[2][1] - A[2][1]} })
-    end
+    return nil
   end
-  local t = math.floor( 0.5+1000*(numerator_t / denominator) ) /1000
-  local u = math.floor( 0.5+1000*(numerator_u / denominator) ) /1000
-  print ( "t, u : ", t, u )
-  if  ( u < 0 or u > 1  ) then
+  local t = math.floor( 0.5+100*(numerator_t / denominator) ) /100
+  local u = math.floor( 0.5+100*(numerator_u / denominator) ) /100
+--  print ( "t, u : ", t, u )
+  if  ( t > 1 or u < 0 or u > 1  ) then
     return nil 
   end
-  A = A
   local x = A[1][1] + t * ( A[1][2] - A[1][1] )
   local y = A[2][1] + t * ( A[2][2] - A[2][1] )
-  x = math.floor( x*1000+0.5 )/1000
-  y = math.floor( y*1000+0.5 )/1000
-  print ( "x, y : ", x, y )
+  x = math.floor( x*100+0.5 )/100
+  y = math.floor( y*100+0.5 )/100
+
+  -- compensate conversion error 
+  -- minimum error : 1 pixel
+  if math.abs( A[1][2] - x ) < 0.01  and math.abs( A[2][2] - y ) < 0.01 then
+    return nil
+  end
+--  print ( "x, y : ", x, y )
   return Matrix.new( {{x}, {y}} )
 end
 
@@ -259,17 +261,25 @@ local function getAngle(v1, v2)
   return Matrix.transpos( unit_v1 ) * unit_v2
 end
 
-local function nearest_direction( A, B, C )
-  local AB = vect_len( A - B ) 
-  local AC = vect_len( A - C )
-  print("AB, AC: ", AB, AC)
-  if AB <= AC then
-    return B
-  end
-  return C
+local function cal_shift(pt, boundary, dx, dy, sign)
+  local dist, ortho, shift
+  dist, ortho
+    = Shape.vertice2vectorDist(boundary, pt ) 
+  local bv = Matrix.col( boundary, 2 ) - Matrix.col( boundary, 1 ) 
+  len = vect_len( bv )
+  local norm = math.floor(0.5+100/len)/100 * bv 
+  norm = Matrix.transpos( 
+    Matrix.new( { {dx }, {dy } } ) 
+    ) * norm * norm
+--  print("sign: ", sign)
+  shift = ortho - norm 
+  shift = -1*sign*shift
+--  print(" shift : " )
+--  print( shift )
+  return shift
 end
 
-local function find_boundary( adjA, matA, adjB, matB, dx, dy, sign )
+local function slide_object( adjA, matA, adjB, matB, dx, dy, sign )
   local A1 = Matrix.col( matA, adjA[1] ) 
   local A2 = Matrix.col( matA, adjA[2] ) 
   local A3 = Matrix.col( matA, adjA[3] ) 
@@ -278,127 +288,74 @@ local function find_boundary( adjA, matA, adjB, matB, dx, dy, sign )
   local B3 = Matrix.col( matB, adjB[3] ) 
   local B12 = Matrix.join( B1, B2 )
   local B13 = Matrix.join( B1, B3 )
---[[
-  local segmentA = Matrix.new( {
-      { A1[1][1] - dx, math.floor( A1[1][1]*1000 + 0.5 )/1000 }
-      ,{ A1[2][1] - dy, math.floor( A1[2][1]*1000 + 0.5 )/1000 }
-  } )
+--[
 
-  local AB12 = find_segment_intersection( segmentA, B12 )
-  local AB13 = find_segment_intersection( segmentA, B13 )
-  if not AB12 and not AB13 then
-    return nil, 0, 0
-  end
-  local AB12_xinc
-  local AB12_yinc
-  if AB12 then
-    AB12_xinc = math.floor( ( AB12[1][1] - segmentA[1][1] ) * 1000 + 0.5)/1000
-    AB12_yinc = math.floor( ( AB12[2][1] - segmentA[2][1] ) * 1000 + 0.5)/1000
-  end
-  print( "AB12_xinc, AB12_yinc", AB12_xinc, AB12_yinc )
-  if not AB13 and AB12 then
-    return B12, AB12_xinc, AB12_yinc 
-  end
-  local AB13_xinc = math.floor( ( AB13[1][1] - segmentA[1][1] ) * 1000 + 0.5)/1000
-  local AB13_yinc = math.floor( ( AB13[2][1] - segmentA[2][1] ) * 1000 + 0.5)/1000
-  print( "AB13_xinc, AB13_yinc", AB13_xinc, AB13_yinc )
-  if not AB13 then
-    return B12, AB12_xinc, AB12_yinc 
-  end
-  if not AB12 then
-    return B13, AB13_xinc, AB13_yinc 
-  end
-  -- TODO
-  local cx, cy
+  local moving,target , M1, M2, CB
   if sign > 0 then
-    cx, cy = Shape.getCentroid( matB )
+    moving = matA
+    target = matB
+    M1 = A1
+    M2 = A2
+    M3 = A3
+    local cx, cy = Shape.getCentroid( target )
+    local center = Matrix.new( { {cx}, {cy} } )
+    CB = Matrix.join( center, B1 ) 
   else
-    cx, cy = Shape.getCentroid( matA )
-  end
-  local dir = nearest_direction( Matrix.new({{cx},{cy}}), AB12, AB13 )
-  if dir == AB12 then
-    return B12, AB12_xinc, AB12_yinc
-  else
-    return B13, AB13_xinc, AB13_yinc
-  end
---]]
-
-  --[[
-  print( "B12" )
-  print( B12 )
-  if not AB12 then
-    return B13, segmentA[1][1] - AB13[1][1], segmentA[2][1] - AB13[2][1]
+    moving = matB
+    target = matA
+    M1 = B1
+    M2 = B2
+    M3 = B3
+    local cx, cy = Shape.getCentroid( target )
+    local center = Matrix.new( { {cx}, {cy} } )
+    CB = Matrix.join( center, A1 ) 
   end
 
-  --[[
-  print( "B12" )
-  print( B12 )
-  print( "B13" )
-  print( B13 )
-  --]]
-  --[
-  local xinc, yinc = dx/2, dy/2 
-  local xprev = A1[1][1] - dx
-  local yprev = A1[2][1] - dy
-  local cx, cy = Shape.getCentroid( matA ) 
-  for i = 1, 4, 1 do
-    local segmentA = Matrix.new( {
-        { cx, xprev + xinc }
-      , { cy, yprev + yinc }
-    } )
-    local is_intersectB12, angleB12 = check_segment_intersection( segmentA, B12 )
-    local is_intersectB13, angleB13 = check_segment_intersection( segmentA, B13 )
-    if is_intersectB12 and is_intersectB13 then
-      angleB12 = getAngle( A2-A1, B2 - A1 )
-      angleB13 = getAngle( A2-A1, B3 - A1 )
-      --print("angle 12, 13: ", angleB12, angleB13 )
-      if angleB12 > angleB13 then
-        return B12, xinc, yinc
-      end
-      return B13, xinc, yinc
-    end
-    if is_intersectB12 then
-      return B12, xinc, yinc
-    end
-    if is_intersectB13 then
-      return B13, xinc, yinc
-    end
-    xinc = xinc + dx/2
-    yinc = yinc + dy/2
+  local M12, M13
+--  print(" B12 ")
+--  print( B12 )
+  local shiftB12 = cal_shift( A1, B12, dx, dy, sign)
+  M12 = Matrix.join( M1 + shiftB12, M2 + shiftB12 ) 
+  M13 = Matrix.join( M1 + shiftB12, M3 + shiftB12 ) 
+  local B12M12 = find_segment_intersection( CB, M12 )
+  local B12M13 = find_segment_intersection( CB, M13 )
+  if B12M12 or B12M13 then
+    shiftB12 = nil
   end
-  return nil, 0, 0
-  --]]
+
+--  print(" B13 ")
+--  print( B13 )
+  local shiftB13 = cal_shift( A1, B13, dx, dy, sign)
+  M12 = Matrix.join( M1 + shiftB13, M2 + shiftB13 ) 
+  M13 = Matrix.join( M1 + shiftB13, M3 + shiftB13 ) 
+  local B13M12 = find_segment_intersection( CB, M12 )
+  local B13M13 = find_segment_intersection( CB, M13 )
+  if B13M12 or B13M13 then
+    shiftB13 = nil
+  end
+
+  if shiftB12 and shiftB13 then
+    if vect_len( shiftB12 ) < vect_len( shiftB13 ) then
+      return shiftB12
+    else
+      return shiftB13
+    end
+  end
+
+  if shiftB12 then
+    return shiftB12
+  end
+
+  if shiftB13 then
+    return shiftB13
+  end
+
+  return nil
 end
-
--- A : moving body
--- B : station body
--- return : dx, dy
-local function resolve_edge_condition(A, B, idxA, idxB, dx, dy)
-  local adjA = { idxA }
-  local adjB = { idxB }
-  gen_adjacent_vect( adjA, #A[1] )
-  gen_adjacent_vect( adjB, #B[1] )
-  local A1 = Matrix.col(A, adjA[1])
-  local B1 = Matrix.col(B, adjB[1])
-  -- 겹치는 두 점 사이의 vector를 구한다.
-  local adj
-  -- scale up to prevent roundoff error
-  local vectAB = B1 - A1 -Matrix.new( { {dx},{dy} } )
-  vectAB = vectAB
-
-  -- 인접한 두 점이 아니면 경계선 문제가 아니다. 
-  if vect_len( vectAB ) > 0.1 then 
-    return Matrix.new( { {-dx}, {-dy} } ), false
-  end
-
-  local dist, ds 
-  ds = B1 - A1
-  ds = ds
-  return ds, true
-end
-
 
 function Shape:resolve( dx, dy, obj )
+  dx = math.floor( dx * 100 + 0.5 ) /100
+  dy = math.floor( dy * 100 + 0.5 ) /100
   -- prevent tunneling 
   if math.sqrt(dx*dx + dy*dy) > 0.5 then
     self:move( -dx, -dy )
@@ -411,14 +368,9 @@ function Shape:resolve( dx, dy, obj )
     return nil
   end
   
-  local ax = Matrix.new( {
-    {  dx }
-    ,{ dy }
-  })
-
   local dist, sortedPtsA
   local sortedPtsB
-  local boundary, nearest_pt
+  local movement
   local pt = find_collision_pt(self.mat, obj.mat)
   local sign = 1
   local angle
@@ -436,76 +388,24 @@ function Shape:resolve( dx, dy, obj )
     gen_adjacent_vect( sortedPtsB, #obj.mat[1] )
     self:move( -dx, -dy )
     sign = -1
-    boundary, actual_dx, actual_dy = find_boundary( sortedPtsB, obj.mat, sortedPtsA, self.mat, -dx, -dy, sign )
-    actual_dx, actual_dy = -actual_dx, -actual_dy
-    nearest_pt = Matrix.new( { 
-       {obj.mat[1][pt] }
-      ,{obj.mat[2][pt] } 
-    } )
-    --self:move( dx, dy )
+    movement = slide_object( sortedPtsB, obj.mat, sortedPtsA, self.mat, -dx, -dy, sign )
   else
     sortedPtsA = {pt}
-    --[
-    pt = find_collision_pt(obj.mat, self.mat)
-    if pt > 0 then
-      local ds, is_edge = resolve_edge_condition( 
-         self.mat
-        ,obj.mat
-        ,sortedPtsA[1], pt
-        ,dx, dy 
-      ) 
-      if is_edge then
-        print(" edge condition " )
-        print( ds[1][1], ds[2][1] )
-        self:move( ds[1][1], ds[2][1] )
-        return ds 
-      end
-    end
-    --]]
     pt = sortedPtsA[1]
     local col = Matrix.col(self.mat, pt)
     dist, sortedPtsB = Shape.pt2ptSort( col, obj.mat)
     gen_adjacent_vect( sortedPtsA, #self.mat[1] )
     gen_adjacent_vect( sortedPtsB, #obj.mat[1] )
-    boundary, actual_dx, actual_dy = find_boundary( sortedPtsA, self.mat, sortedPtsB, obj.mat, dx, dy, sign )
-    nearest_pt = Matrix.new( { 
-       {self.mat[1][pt] - dx + actual_dx}
-      ,{self.mat[2][pt] - dy + actual_dy} 
-    } )
-    --self:move( -dx, -dy )
+    movement = slide_object( sortedPtsA, self.mat, sortedPtsB, obj.mat, dx, dy, sign )
   end
-  --[[
-  print(" actual_dx, actual_dy :", actual_dx, actual_dy)
-  print("boundary")
-  print( boundary )
-  --]]
-  self:move( -dx + actual_dx, -dy + actual_dy )
-  if not boundary then
+  if not movement then
+    self:move( -dx, -dy)
     return nil
   end
-  dist, ortho
-    = Shape.vertice2vectorDist(boundary, nearest_pt) 
---[[
-  print( " dist: ")
-  print( dist )
-  print( " ortho: ")
-  print( ortho )
---]]
-  boundary = Matrix.col(boundary, 2) - Matrix.col(boundary, 1)
-  len = vect_len( boundary )
-  local norm = math.floor(0.5+1000/len)/1000 * boundary
-  norm = Matrix.transpos( 
-    Matrix.new( { {dx }, {dy } } ) 
-    ) * norm * norm
-  shift = sign * ortho - norm 
-  
-  shift = -1*shift
-  --[[
-  print( "shift" )
-  print( shift )
-  --]]
-  Matrix.shift( self.mat, shift)
-  return shift 
+  Matrix.shift( self.mat, movement )
+--  print( "boundary" )
+--  print( boundary )
+  return nil 
 end
 
 function Shape:is_collieded( o )
