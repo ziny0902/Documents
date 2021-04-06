@@ -9,6 +9,12 @@ setmetatable(Circle
       __index = Shape
       , __call =  function (o, center, r) return o:new( center, r ) end
     })
+function Circle.AABBBox( C, r )
+  local R = Matrix.new( { {r}, {r} } )
+  local LB = C - R 
+  local RT = C + R 
+  return Matrix.join( LB, RT )
+end
 
 function Circle:new( center, radius ) 
   local o = {}
@@ -17,6 +23,7 @@ function Circle:new( center, radius )
   o.R = radius
   o.color = {1, 1, 1, 1}
   o.action = "fill"
+  o.aabb = Circle.AABBBox( o.mat, o.R )
   return o
 end
 
@@ -29,6 +36,11 @@ function Circle:draw( scene )
     , v[2]
     , self.R * scene:getUnitPixel() 
   )
+
+  local x1, y1 = scene:scene2screen( self.aabb[1][1], self.aabb[2][1] )
+  local x2, y2 = scene:scene2screen( self.aabb[1][2], self.aabb[2][2] )
+  love.graphics.setColor( { 1, 1, 1, 1 } )
+  love.graphics.rectangle( "line", x1, y1, x2 - x1, y2 - y1 )
 --  if self.ortho then
 --    love.graphics.setColor( {1, 1, 1, 1})
 --    v = self:getVertices( scene, self.ortho ) 
@@ -139,6 +151,8 @@ function Circle.slidingPoly( poly, circle, dx, dy )
   if ortho then
     local scale = vect_len( ortho )
     ortho = dist*(1/scale)*ortho 
+  else
+    return nil
   end
   circle.ortho = Matrix.join( circle.mat, ortho + circle.mat)
 
@@ -195,11 +209,15 @@ end
 function Circle:resolve( dx, dy, o )
   local movement
   if o:getType() == "Circle" then
-    movement = CCResolver( self, o )
+    if CCC( self.mat, o.mat, self.R, o.R ) then
+      movement = CCResolver( self, o )
+    end
   else
     movement = Circle.slidingPoly( o, self, dx, dy ) 
   end
-  self:move( movement[1][1], movement[2][1] )
+  if movement then
+    self:move( movement[1][1], movement[2][1] )
+  end
 end
 
 function Circle:is_collieded( o )

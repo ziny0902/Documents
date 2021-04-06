@@ -9,10 +9,16 @@
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
 !_TAG_PROGRAM_VERSION	5.9.0	/p5.9.20210110.0/
+AABB	collider.lua	/^function AABB( A, B )$/;"	f
+CCC	collider.lua	/^function CCC( c1, c2, r1, r2 )$/;"	f
+CCResolver	circle.lua	/^function CCResolver( station, moving )$/;"	f
+Circle.slideCircle	circle.lua	/^function Circle.slideCircle( poly, circle, dx, dy )$/;"	f
+Circle.slidingPoly	circle.lua	/^function Circle.slidingPoly( poly, circle, dx, dy )$/;"	f
 Circle:draw	circle.lua	/^function Circle:draw( scene )$/;"	f
 Circle:getType	circle.lua	/^function Circle:getType()$/;"	f
 Circle:is_collieded	circle.lua	/^function Circle:is_collieded( o )$/;"	f
 Circle:new	circle.lua	/^function Circle:new( center, radius ) $/;"	f
+Circle:resolve	circle.lua	/^function Circle:resolve( dx, dy, o )$/;"	f
 Matrix.col	matrix.class.lua	/^Matrix.col = function(m, col)$/;"	f
 Matrix.col	matrix.lua	/^Matrix.col = function(m, col)$/;"	f
 Matrix.join	matrix.class.lua	/^Matrix.join = function( left, right )$/;"	f
@@ -30,6 +36,7 @@ Matrix.sort	matrix.class.lua	/^Matrix.sort = function(m)$/;"	f
 Matrix.sort	matrix.lua	/^Matrix.sort = function(m)$/;"	f
 Matrix.transpos	matrix.class.lua	/^Matrix.transpos = function(m)$/;"	f
 Matrix.transpos	matrix.lua	/^Matrix.transpos = function(m)$/;"	f
+SAT	collider.lua	/^function SAT(a, b)$/;"	f
 Scene:__tostring	scene.lua	/^function Scene:__tostring()$/;"	f
 Scene:addShape	scene.lua	/^function Scene:addShape( shape )$/;"	f
 Scene:draw	scene.lua	/^function Scene:draw()$/;"	f
@@ -43,9 +50,7 @@ Scene:new	scene.lua	/^function Scene:new( w, h, xrange)$/;"	f
 Scene:scene2screen	scene.lua	/^function Scene:scene2screen(x, y)$/;"	f
 Scene:screen2scene	scene.lua	/^function Scene:screen2scene(x, y)$/;"	f
 Scene:update	scene.lua	/^function Scene:update(dt)$/;"	f
-Shape.SAT	shape.lua	/^function Shape.SAT(a, b)$/;"	f
 Shape.getCentroid	shape.lua	/^function Shape.getCentroid( mat )$/;"	f
-Shape.isOverlaped	shape.lua	/^function Shape.isOverlaped( ax, a, b )$/;"	f
 Shape.pt2ptSort	shape.lua	/^function Shape.pt2ptSort(pt, mat)$/;"	f
 Shape.vertice2vectorDist	shape.lua	/^function Shape.vertice2vectorDist( vect, vertices)$/;"	f
 Shape:__tostring	shape.lua	/^function Shape:__tostring()$/;"	f
@@ -65,15 +70,17 @@ __call	scene.lua	/^    , { __call =  function (o, w, h, x, y)$/;"	f
 __call	shape.lua	/^    , { __call =  function (o, vertices)$/;"	f
 add	matrix.class.lua	/^local function add(left, right)$/;"	f
 add	matrix.lua	/^local function add(left, right)$/;"	f
+cal_shift	shape.lua	/^local function cal_shift(pt, boundary, dx, dy, sign)$/;"	f
 check_segment_intersection	shape.lua	/^local function check_segment_intersection( A, B )$/;"	f
 collisonTest	collison.lua	/^function collisonTest( a, b )$/;"	f
-find_boundary	shape.lua	/^local function find_boundary( adjA, matA, adjB, matB, dx, dy )$/;"	f
 find_collision_pt	shape.lua	/^local function find_collision_pt(a, b)$/;"	f
-find_segment_intersection	shape.lua	/^local function find_segment_intersection( A, B )$/;"	f
+find_segment_intersection	collider.lua	/^function find_segment_intersection( A, B )$/;"	f
 gen_adjacent_vect	shape.lua	/^local function gen_adjacent_vect(vect, col)$/;"	f
+getAdjVect	circle.lua	/^local function getAdjVect( station, moving, adj )$/;"	f
 getAngle	shape.lua	/^local function getAngle(v1, v2)$/;"	f
 index	matrix.class.lua	/^local function index(m, idx)$/;"	f
 index	matrix.lua	/^local function index(m, idx)$/;"	f
+isOverlaped	collider.lua	/^local function isOverlaped( ax, a, b )$/;"	f
 isOverlaped	collison.lua	/^function isOverlaped( ax, a, b )$/;"	f
 loadShape	main.lua	/^local function loadShape()$/;"	f
 love.conf	conf.lua	/^function love.conf(t)$/;"	f
@@ -88,12 +95,11 @@ m2string	matrix.class.lua	/^local function m2string( m )$/;"	f
 m2string	matrix.lua	/^local function m2string( m )$/;"	f
 mul	matrix.class.lua	/^local function mul(left, right)$/;"	f
 mul	matrix.lua	/^local function mul(left, right)$/;"	f
-nearest_direction	shape.lua	/^local function nearest_direction( A, B, C )$/;"	f
-nearest_dist	circle.lua	/^function nearest_dist( a, b )$/;"	f
+nearest_segments	circle.lua	/^local function nearest_segments( a, b, r_sqaure )$/;"	f
 newindex	matrix.class.lua	/^local function newindex(m, key, value)$/;"	f
 newindex	matrix.lua	/^local function newindex(m, key, value)$/;"	f
-resolve_edge_condition	shape.lua	/^local function resolve_edge_condition(A, B, idxA, idxB, dx, dy)$/;"	f
 simulator	collison.lua	/^function simulator()$/;"	f
+slide_object	shape.lua	/^local function slide_object( adjA, matA, adjB, matB, dx, dy, sign )$/;"	f
 sub	matrix.class.lua	/^local function sub(left, right)$/;"	f
 sub	matrix.lua	/^local function sub(left, right)$/;"	f
-vect_len	shape.lua	/^local function vect_len( v )$/;"	f
+vect_len	shape.lua	/^function vect_len( v )$/;"	f

@@ -1,3 +1,4 @@
+require "collider"
 Scene = { }
 
 setmetatable(Scene
@@ -139,7 +140,8 @@ function Scene:update(dt)
     if i == sel then
       goto continue
     end
-    local isCollied = self.shapes[sel]:is_collieded( self.shapes[i] )
+    local isCollied = AABB( self.shapes[sel].aabb, self.shapes[i].aabb )
+    --local isCollied = self.shapes[sel]:is_collieded( self.shapes[i] )
     if isCollied then
       self.shapes[sel]:setColor( overlapColor )
       local ortho 

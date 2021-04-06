@@ -5,7 +5,43 @@ function vect_len( v )
   return math.sqrt( v[1][1]^2 + v[2][1]^2 )
 end
 
-Shape = {}
+Shape = {
+  getCentroid
+}
+
+function Shape.AABBBox( A )
+  if not A then
+    return nil
+  end
+  local c = #A[1]
+  local cx, cy = Shape.getCentroid( A )
+  local center = Matrix.new( { {cx}, {cy}  } )
+  local LB
+  local RT
+  for i = 1, c, 1 do
+    local col = Matrix.col( A, i )
+    if i == 1 then
+      LB, RT = Matrix.col( A, i ), Matrix.col( A, i )
+    end
+    if LB[1][1] > col[1][1] then
+      LB[1][1] = col[1][1]
+    end
+    if LB[2][1] > col[2][1] then
+      LB[2][1] = col[2][1]
+    end
+    if RT[1][1] < col[1][1] then
+      RT[1][1] = col[1][1]
+    end
+    if RT[2][1] < col[2][1] then
+      RT[2][1] = col[2][1]
+    end
+  end
+  if LB and RT then
+    local aabb = Matrix.join( LB, RT )
+    return aabb
+  end
+  return nil
+end
 
 setmetatable(Shape
     , { __call =  function (o, vertices)
@@ -18,15 +54,13 @@ function Shape:new( vertices )
   o.mat = Matrix.new( vertices ) 
   o.color = {1, 1, 1, 1}
   o.action = "fill"
+  o.aabb = Shape.AABBBox( o.mat ) 
   return o
 end
 
 function Shape:move( x_inc, y_inc )
-  x_inc = math.floor(x_inc*100+0.5)/100
-  y_inc = math.floor(y_inc*100+0.5)/100
-  shiftx = x_inc * Matrix.ones(1, #self.mat[1])
-  shifty = y_inc * Matrix.ones(1, #self.mat[1])
-  self.mat = self.mat + Matrix.new( { shiftx[1], shifty[1] } )
+  Matrix.shift( self.mat, Matrix.new( { { x_inc }, { y_inc } } ) )
+  Matrix.shift( self.aabb, Matrix.new( { { x_inc }, { y_inc } } ) )
 end
 
 function Shape.getCentroid( mat )
@@ -311,7 +345,7 @@ function Shape:resolve( dx, dy, obj )
     self:move( -dx, -dy)
     return nil
   end
-  Matrix.shift( self.mat, movement )
+  self:move( movement[1][1], movement[2][1] )
   return nil 
 end
 
@@ -327,6 +361,11 @@ end
 function Shape:draw( scene )
   love.graphics.setColor( self.color )
   love.graphics.polygon( self.action, self:getVertices( scene, self.mat ) )
+  local unit = scene:getUnitPixel()
+  local x1, y1 = scene:scene2screen( self.aabb[1][1], self.aabb[2][1] )
+  local x2, y2 = scene:scene2screen( self.aabb[1][2], self.aabb[2][2] )
+  love.graphics.setColor( { 1, 1, 1, 1 } )
+  love.graphics.rectangle( "line", x1, y1, x2 - x1, y2 - y1 )
 end
 
 function Shape:getVertices( scene , m)

@@ -7,53 +7,15 @@ function AABB( A, B )
   if B[1][2] < A[1][1] then
     return false
   end
-  if A[2][1] < B[2][3] then
+  if A[2][2] < B[2][1] then
     return false
   end
-  if B[2][1] < A[2][3] then
+  if B[2][2] < A[2][1] then
     return false
   end
   return true
 end
 
-function find_segment_intersection( A, B )
---  print ( A )
---  print ( B )
-  local numerator_t = 
-    ( A[1][1] - B[1][1] ) * ( B[2][1] - B[2][2] )
-    - ( A[2][1] - B[2][1] ) * ( B[1][1] - B[1][2] )
-  local numerator_u = 
-    ( A[1][2] - A[1][1] ) * ( A[2][1] - B[2][1] )
-    - ( A[2][2] - A[2][1] ) * ( A[1][1] - B[1][1] )
-  local denominator =
-    ( A[1][1] - A[1][2] ) * ( B[2][1] - B[2][2] )
-    - ( A[2][1] - A[2][2]) * ( B[1][1] - B[1][2] )
-  denominator = math.floor(denominator*100 + 0.5)/100
-  if denominator == 0 then
-    return nil
-  end
-  local t = math.floor( 0.5+100*(numerator_t / denominator) ) /100
-  local u = math.floor( 0.5+100*(numerator_u / denominator) ) /100
---  print ( "t, u : ", t, u )
-  local x = A[1][1] + t * ( A[1][2] - A[1][1] )
-  local y = A[2][1] + t * ( A[2][2] - A[2][1] )
-  x = math.floor( x*100+0.5 )/100
-  y = math.floor( y*100+0.5 )/100
-
---  print ( "x, y : ", x, y )
-  if  ( t <= 0 or t >= 0.99 or u <= 0 or u >= 0.99  ) then
-    return nil 
-  end
-  -- compensate conversion error 
-  -- minimum error : 1 pixel
-  if math.abs( A[1][2] - x ) < 0.01  and math.abs( A[2][2] - y ) < 0.01 then
-    return nil
-  end
-  if math.abs( A[1][1] - x ) < 0.01  and math.abs( A[2][1] - y ) < 0.01 then
-    return nil
-  end
-  return Matrix.new( {{x}, {y}} )
-end
 
 local function isOverlaped( ax, a, b )
   local r, c, projA, projB, len
@@ -114,4 +76,43 @@ function CCC( c1, c2, r1, r2 )
     return true 
   end
   return false 
+end
+
+function find_segment_intersection( A, B )
+--  print ( A )
+--  print ( B )
+  local numerator_t = 
+    ( A[1][1] - B[1][1] ) * ( B[2][1] - B[2][2] )
+    - ( A[2][1] - B[2][1] ) * ( B[1][1] - B[1][2] )
+  local numerator_u = 
+    ( A[1][2] - A[1][1] ) * ( A[2][1] - B[2][1] )
+    - ( A[2][2] - A[2][1] ) * ( A[1][1] - B[1][1] )
+  local denominator =
+    ( A[1][1] - A[1][2] ) * ( B[2][1] - B[2][2] )
+    - ( A[2][1] - A[2][2]) * ( B[1][1] - B[1][2] )
+  denominator = math.floor(denominator*100 + 0.5)/100
+  if denominator == 0 then
+    return nil
+  end
+  local t = math.floor( 0.5+100*(numerator_t / denominator) ) /100
+  local u = math.floor( 0.5+100*(numerator_u / denominator) ) /100
+--  print ( "t, u : ", t, u )
+  local x = A[1][1] + t * ( A[1][2] - A[1][1] )
+  local y = A[2][1] + t * ( A[2][2] - A[2][1] )
+  x = math.floor( x*100+0.5 )/100
+  y = math.floor( y*100+0.5 )/100
+
+--  print ( "x, y : ", x, y )
+  if  ( t <= 0 or t >= 0.99 or u <= 0 or u >= 0.99  ) then
+    return nil 
+  end
+  -- compensate conversion error 
+  -- minimum error : 1 pixel
+  if math.abs( A[1][2] - x ) < 0.01  and math.abs( A[2][2] - y ) < 0.01 then
+    return nil
+  end
+  if math.abs( A[1][1] - x ) < 0.01  and math.abs( A[2][1] - y ) < 0.01 then
+    return nil
+  end
+  return Matrix.new( {{x}, {y}} )
 end
