@@ -15,6 +15,8 @@ local function loadShape()
   scene:addShape( shape )
   shape = Circle( {{ 5.0 }, { 1.0 }}, 0.5 )
   scene:addShape( shape )
+  shape = Circle( {{ 7.0 }, { 2.0 }}, 0.5 )
+  scene:addShape( shape )
   shape = Shape( {
       { 3.0, 5.0, 5.0, 3.0 }
     , { 8.0, 8.0, 7.0, 6.0 }

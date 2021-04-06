@@ -95,7 +95,6 @@ end
 
 local function getAdjVect( station, moving, adj )
   local norm
---  print("adj: ", adj[1], adj[2], adj[3] )
   local A1 = Matrix.col( station.mat, adj[2] )
   local A2 = Matrix.col( station.mat, adj[1] )
   local A3 = Matrix.col( station.mat, adj[3] )
@@ -180,12 +179,45 @@ function Circle.slideCircle( poly, circle, dx, dy )
   return movement
 end
 
-function Circle:resolve( dx, dy, o )
-  local movement = Circle.slidingPoly( o, self, dx, dy ) 
-  self:move(movement[1][1], movement[2][1])
+function CCC( c1, c2 )
+  local CCR = ( c1.R + c2.R )^2
+  local dist 
+    = ( c1.mat[1][1] - c2.mat[1][1] )^2
+    + ( c1.mat[2][1] - c2.mat[2][1] )^2
+
+  if CCR > dist then
+    return true 
+  end
+  return false 
 end
 
+function CCResolver( station, moving )
+  local CCR = station.R + moving.R
+  local ccv = Matrix.new( { 
+     { moving.mat[1][1] - station.mat[1][1] }
+    ,{ moving.mat[2][1] - station.mat[2][1] }
+  } )
+  local scale = vect_len( ccv )
+  local norm = (1/scale) * ccv
+  local diff = CCR - scale
+  return -1*diff * norm
+end
+
+function Circle:resolve( dx, dy, o )
+  local movement
+  if o:getType() == "Circle" then
+    movement = CCResolver( self, o )
+  else
+    movement = Circle.slidingPoly( o, self, dx, dy ) 
+  end
+  self:move( movement[1][1], movement[2][1] )
+end
+
+
 function Circle:is_collieded( o )
+  if o:getType() == "Circle" then
+    return CCC( self, o )
+  end
   local r_sqaure = self.R * self.R
   local segments = nearest_segments( o.mat, self.mat, r_sqaure )
   if #segments > 0 then
