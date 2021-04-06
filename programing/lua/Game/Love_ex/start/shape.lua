@@ -1,7 +1,6 @@
-require "collison"
 local Matrix = require "matrix"
 
-local function vect_len( v )
+function vect_len( v )
   return math.sqrt( v[1][1]^2 + v[2][1]^2 )
 end
 
@@ -64,30 +63,24 @@ function Shape:getType()
 end
 
 function Shape.isOverlaped( ax, a, b )
-  local r, c, projA, projB
+  local r, c, projA, projB, len
   r, c = Matrix.size(a)
-  projA = Matrix.transpos(ax) * a
-  sortedA = Matrix.sort( projA )
-  projB = Matrix.transpos(ax) * b 
-  sortedB = Matrix.sort( projB )
-  local last = #projA[1]
-  for i = 1, #projB[1], 1 do
-    if projB[1][i] > sortedA[1][1] and projB[1][i] < sortedA[1][last] then
-      return true, i
-    end
+  projA = Matrix.sort( Matrix.transpos(ax) * a )
+  projB = Matrix.sort( Matrix.transpos(ax) * b )
+  r, c = Matrix.size(projA)
+  if projB[1][1] > projA[1][c] then
+    return false
   end
-  last = #projB[1]
-  for i = 1, #projA[1], 1 do
-    if projA[1][i] > sortedB[1][1] and projA[1][i] < sortedB[1][last] then
-      return true, i
-    end
+  r, c = Matrix.size(projB)
+  if projB[1][c] < projA[1][1] then
+    return false
   end
-  return false, -1
+  return true
 end
 
 function Shape.SAT(a, b)
   local r, c = Matrix.size(a)
-  local ax, result, overlapPt
+  local ax, result
   for i = 1, c, 1 do
     if i == c then
       ax = Matrix.new({{0, -1},{1, 0}}) 
@@ -96,7 +89,7 @@ function Shape.SAT(a, b)
       ax = Matrix.new({{0, -1},{1, 0}}) 
           * ( Matrix.col(a, i) - Matrix.col(a, i+1) )
     end
-    result, overlapPt = Shape.isOverlaped(ax, a, b)
+    result = Shape.isOverlaped(ax, a, b)
     if result == false then
       return false, -1 
     end
@@ -110,12 +103,12 @@ function Shape.SAT(a, b)
       ax = Matrix.new({{0, -1},{1, 0}}) 
           * ( Matrix.col(b, i) - Matrix.col(b, i+1) )
     end
-    result, overlapPt = Shape.isOverlaped(ax, b, a)
+    result = Shape.isOverlaped(ax, b, a)
     if result == false then
       return false, -1
     end
   end
-  return true, overlapPt
+  return true
 end
 
 function Shape.pt2ptSort(pt, mat)
@@ -158,8 +151,7 @@ local function find_collision_pt(a, b)
   for i = 1, #a[1], 1 do
     local col = Matrix.col(a, i)
     col = Matrix.join(col, col)
-    local ret = collisonTest( col, b) 
-    --local ret = Shape.SAT( col, b )
+    local ret = Shape.SAT( col, b )
     if ret then
       pt = i
       break
@@ -182,7 +174,7 @@ local function gen_adjacent_vect(vect, col)
   return vect 
 end
 
-local function find_segment_intersection( A, B )
+function find_segment_intersection( A, B )
   print ( A )
   print ( B )
   local numerator_t = 
@@ -364,11 +356,12 @@ function Shape:resolve( dx, dy, obj )
     self:move( -dx, -dy )
     return Matrix.new( { {0}, {0} })
   end
-  if self:getType() == "Circle" then
-    return nil
-  end
   if obj:getType() == "Circle" then
-    return nil
+    local movement = Circle.slideCircle( self, obj, dx, dy )
+    if movement then
+      self:move( movement[1][1], movement[2][1] )
+    end
+    return  movement
   end
   
   local dist, sortedPtsA

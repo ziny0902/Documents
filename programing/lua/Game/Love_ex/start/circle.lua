@@ -28,6 +28,15 @@ function Circle:draw( scene )
     , v[2]
     , self.R * scene:getUnitPixel() 
   )
+--  if self.ortho then
+--    love.graphics.setColor( {1, 1, 1, 1})
+--    v = self:getVertices( scene, self.ortho ) 
+--    love.graphics.line( v[1], v[2], v[3], v[4] )
+--  end
+--  if self.norm then
+--    v = self:getVertices( scene, self.norm ) 
+--    love.graphics.line( v[1], v[2], v[3], v[4] )
+--  end
 end
 
 function Circle:getType()
@@ -35,44 +44,153 @@ function Circle:getType()
 end
 
 -- a : polygon, b: point
-function nearest_dist( a, b )
-  local r, c = Matrix.size(a)
-  local dist = {}
+local function nearest_segments( a, b, r_sqaure )
+  local r, c = Matrix.size( a )
+  local segments = {}
+  local dist
   for i = 1, c, 1 do
-    local v
-    local w = ( b - Matrix.col(a, i) )
+    local v, A2
+    local A1 = Matrix.col( a, i )
     if not (i == c) then
-      v = Matrix.new({ {a[1][i+1] - a[1][i]}, {a[2][i+1] - a[2][i]} })
+      A2 = Matrix.col( a, i+1)
     else
-      v = Matrix.new({ {a[1][1] - a[1][i]}, {a[2][1] - a[2][i]} })
+      A2 = Matrix.col( a, 1)
     end
+    v = A2 - A1
     local scale = math.sqrt( v[1][1]^2 + v[2][1]^2 )
     local norm = (1/scale)*v
+    local w = ( b - Matrix.col(a, i) )
     local proj = Matrix.transpos(w) * norm 
+    local ortho, adj
     if proj > scale  then
-      if not (i == c) then
-        dist[i] = (a[1][i+1] - b[1][1])^2 + (a[2][i+1] - b[2][1])^2
+      if i < c then
+        ortho = b - Matrix.col( a, i+1 )
+        adj = { i, i+1, i + 2 <= c and i + 2 or 1 }
       else
-        dist[i] = (a[1][1] - b[1][1])^2 + (a[2][1] - b[2][1])^2
+        ortho = b - Matrix.col( a, 1 )
+        adj = { c, 1, 2 }
       end
+      norm = nil
     elseif proj < 0 then
-      dist[i] = w[1][1]^2 + w[2][1]^2
+      ortho = b - Matrix.col( a, i )
+      adj = { i > 1 and i - 1 or c, i, i < c and i + 1 or 1 }
+      norm = nil
     else
-      local otho = w - proj*norm
-      dist[i] = otho[1][1]^2 + otho[2][1]^2
+      ortho = w - proj*norm
+    end
+    dist = ortho[1][1]^2 + ortho[2][1]^2
+    if dist < r_sqaure then
+      table.insert( segments, 
+        { 
+          ["adj"] = adj 
+          , ["ortho"] = ortho
+          , ["norm"] = norm
+          , ["dist"] = math.sqrt(r_sqaure) - math.sqrt(dist)
+        } 
+      ) 
     end
   end
-  return dist
+  return segments
+end
+
+local function getAdjVect( station, moving, adj )
+  local norm
+--  print("adj: ", adj[1], adj[2], adj[3] )
+  local A1 = Matrix.col( station.mat, adj[2] )
+  local A2 = Matrix.col( station.mat, adj[1] )
+  local A3 = Matrix.col( station.mat, adj[3] )
+  local A12 = Matrix.join( A1, A2 )
+  local A13 = Matrix.join( A1, A3 )
+  local cx, cy = Shape.getCentroid( station.mat )
+  local center = Matrix.new( { {cx}, {cy} } )
+  local c2c = Matrix.join( center, moving.mat)
+  local A12C = find_segment_intersection( A12, c2c )
+  local A13C = find_segment_intersection( A13, c2c )
+  A12 = A2 - A1
+  A13 = A3 - A1
+  if not A12C then
+    norm = ( 1/ vect_len( A13 ) ) * A13 
+  elseif not A13C then
+    norm = ( 1/ vect_len( A12 ) ) * A12
+  else
+    norm = 
+      vect_len(A12C - moving.mat) < vect_len(A13C - moving.mat)
+        and 
+       ( 1/ vect_len( A12 ) ) * A12 or ( 1/ vect_len( A13 ) ) * A13 
+  end
+  return norm
+end
+
+function Circle.slidingPoly( poly, circle, dx, dy )
+  local r_sqaure = circle.R * circle.R
+  local segments = nearest_segments( poly.mat, circle.mat, r_sqaure )
+  local D = Matrix.new( { {dx}, {dy} } )
+  local dist = math.huge
+  local ortho
+  local norm, adj
+  for i = 1, #segments, 1 do
+    if dist > segments[i]["dist"] then
+      ortho = segments[i]["ortho"]
+      dist = segments[i]["dist"]
+      norm = segments[i]["norm"]
+      adj = segments[i]["adj"]
+    end
+  end
+  if ortho then
+    local scale = vect_len( ortho )
+    ortho = dist*(1/scale)*ortho 
+  end
+  circle.ortho = Matrix.join( circle.mat, ortho + circle.mat)
+
+  if not norm then
+    norm = getAdjVect( poly, circle, adj )
+  end
+  local movement = ortho
+  if norm then
+    circle.norm = Matrix.join( circle.mat, 0.5*norm + circle.mat)
+    movement = movement + ( Matrix.transpos( D ) * norm ) * norm
+  end
+  return movement
+end
+
+function Circle.slideCircle( poly, circle, dx, dy )
+  local r_sqaure = circle.R * circle.R
+  local segments = nearest_segments( poly.mat, circle.mat, r_sqaure )
+  local D = Matrix.new( { {dx}, {dy} } )
+  local dist = math.huge
+  local ortho
+  local norm, adj
+  for i = 1, #segments, 1 do
+    if dist > segments[i]["dist"] then
+      ortho = segments[i]["ortho"]
+      dist = segments[i]["dist"]
+      norm = segments[i]["norm"]
+    end
+  end
+  if not ortho then
+    return nil
+  end
+  local scale = vect_len( ortho )
+  ortho = -1*dist*(1/scale)*ortho 
+  if not norm then
+    return ortho 
+  end
+  local movement = ortho
+  movement = movement + ( Matrix.transpos( D ) * norm ) * norm
+  return movement
+end
+
+function Circle:resolve( dx, dy, o )
+  local movement = Circle.slidingPoly( o, self, dx, dy ) 
+  self:move(movement[1][1], movement[2][1])
 end
 
 function Circle:is_collieded( o )
-  local dist = nearest_dist( o.mat, self.mat )
-  local r, c = Matrix.size( o.mat )
   local r_sqaure = self.R * self.R
-  for i = 1, #dist, 1 do
-    if dist[i] <= r_sqaure then
-      return true
-    end
+  local segments = nearest_segments( o.mat, self.mat, r_sqaure )
+  if #segments > 0 then
+    return true
   end
   return false
 end
+

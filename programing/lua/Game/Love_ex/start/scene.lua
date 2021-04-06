@@ -134,11 +134,12 @@ function Scene:update(dt)
   end
   local sel = self.selectShape
   self.shapes[sel]:move( self.x_inc, self.y_inc )
+  self.shapes[sel]:setColor( selColor )
   for i = 1, #self.shapes, 1 do
     if i == sel then
       goto continue
     end
-    local isCollied, pt = self.shapes[sel]:is_collieded( self.shapes[i] )
+    local isCollied = self.shapes[sel]:is_collieded( self.shapes[i] )
     if isCollied then
       self.shapes[sel]:setColor( overlapColor )
       local ortho 
@@ -149,7 +150,6 @@ function Scene:update(dt)
         self.y_inc = ortho[2][1]
       end
     else
-      self.shapes[sel]:setColor( selColor )
     end
     ::continue::
   end
