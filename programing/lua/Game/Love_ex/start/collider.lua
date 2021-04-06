@@ -104,3 +104,14 @@ function SAT(a, b)
   return true
 end
 
+function CCC( c1, c2, r1, r2 )
+  local CCR = ( r1 + r2 )^2
+  local dist 
+    = ( c1[1][1] - c2[1][1] )^2
+    + ( c1[2][1] - c2[2][1] )^2
+
+  if CCR > dist then
+    return true 
+  end
+  return false 
+end
