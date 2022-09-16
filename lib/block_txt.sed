@@ -1,6 +1,6 @@
 /@book{/{
 s/@book{//
-s/,/\t/
+s/,$/\t/
 H
 d
 }
@@ -11,7 +11,7 @@ d
 s/^[[:blank:]]*//
 s/title = *//
 s/[{}]//g
-s/,/\t/
+s/,$/\t/
 H
 d
 }
@@ -19,6 +19,7 @@ d
 s/^[[:blank:]]*//
 s/keywords = *//
 s/[{}]//g
+s/,$/\t/
 H
 d
 }
@@ -26,7 +27,15 @@ d
 s/^[[:blank:]]*//
 s/isbn = *//
 s/[{}]//g
-s/,/\t/
+s/,$/\t/
+H
+d
+}
+/file/{
+s/^[[:blank:]]*//
+s/file = *//
+s/[{}]//g
+s/,$/\t/
 H
 d
 }
