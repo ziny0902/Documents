@@ -8,13 +8,11 @@ fi
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . $SCRIPT_DIR/env.sh
 i=1
-OLD_IFS=$IFS
 while IFS=$'\t' read -r -d $'\0' refId title; do
   refIds[$i]=$(echo ${refId} | xargs echo -n)
   titles[$i]=$(echo ${title} | xargs echo -n)
   i=$(("$i"+1))
 done < <(cat -- "$bibfile" | sed -n -f $SCRIPT_DIR/../lib/file.sed | grep --color=auto -i ${filter} | awk -F '\t' '{ print $1, "\t" , $2 , "\0"}' )
-IFS=$OLD_IFS
 open_refId=$(  printf '%s\n' "${titles[@]}"  | fzf )
 LEN=${#open_refId}
 if [[ $LEN -eq 0 ]] # if refId was not selected
