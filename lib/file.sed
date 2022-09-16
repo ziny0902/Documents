@@ -1,26 +1,26 @@
 /@article\{/{
 s/@article\{/refid = /
-s/,$/\t/
+s/,*$/\t/
 H
 d
 }
 /@book\{/{
 s/@book\{/refid = /
-s/,$/\t/
+s/,*$/\t/
 H
 d
 }
 /^[[:blank:]]*title = /{
 s/^[[:blank:]]*//
 s/[{}]//g
-s/,$/\t/
+s/,*$/\t/
 H
 d
 }
 /^[[:blank:]]*file = /{
 s/^[[:blank:]]*//
 s/[{}]//g
-s/,$/\t/
+s/,*$/\t/
 H
 d
 }
@@ -38,7 +38,7 @@ s/^[ \t\n]*(.*)[ \t]*$/\1/
 s/^/\t/
 }
 # delete 'refid = ' string and all other field except for refid field
-s/^refid =[[:blank:]]*([^\t]*)/\1/
+s/^refid =\s*([^\t]*)/\1/
 s/^([^\t]*).*/\t\1/
 # store refid field
 H
@@ -48,13 +48,16 @@ s/^[^\t]*\t(.*)/\1/
 h
 #process title field
 # if title field don't exist, add tab
+/\s*title =/{
+s/([^\t]*)[\t ]*(title =[^\t]*)(.*$)/\2\t\1\3/
+}
 #trim
 s/^[ \t\n]*(.*)*$/\1/
 /^title =/!{
 s/^/\t/
 }
 # delete 'title = ' string and all other field except for title field
-s/^title =[[:blank:]]*([^\t]*)/\1/
+s/^title =\s*([^\t]*)/\1/
 s/^([^\t]*).*/\t\1/
 # store title field
 H
@@ -63,6 +66,9 @@ x
 s/^[^\t]*\t(.*)/\1/
 h
 #process file field
+/\s*file=/{
+s/([^\t]*)[\t ]*(file=[^\t]*)(.*$)/\2\t\1\3/
+}
 #trim
 s/^[ \t\n]*(.*)[ \t]*$/\1/
 # if file field don't exist, add tab
@@ -70,7 +76,7 @@ s/^[ \t\n]*(.*)[ \t]*$/\1/
 s/^/\t/
 }
 # delete 'file = ' string and all other field except for file field
-s/^file =[[:blank:]]*([^\t]*)/\1/
+s/^file =\s*([^\t]*)/\1/
 s/^([^\t]*).*/\t\1/
 # store file field
 H
@@ -79,7 +85,7 @@ x
 s/^[^\t]*\t(.*)/\1/
 #trim
 s/\n//g
-s/^[ \t]*(.*)/\1\n/
+s/^[ \t]*([.\n]*)/\1/
 p
 # clear hold buffer
 s/.*//

@@ -7,6 +7,8 @@ then
 fi
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . $SCRIPT_DIR/env.sh
+#cat $bibfile | sed -En -f $SCRIPT_DIR/../lib/file.sed
+#exit 0
 i=1
 while IFS=$'\t' read -r -d $'\0' file title; do
   files[$i]=$file
