@@ -12,7 +12,7 @@ while IFS=$'\t' read -r -d $'\0' file title; do
   files[$i]=$file
   titles[$i]=$title
   i=$(("$i"+1))
-done < <(cat -- "$bibfile" | sed -n -f $SCRIPT_DIR/../lib/file.sed | grep --color=auto -i ${filter} | awk -F '\t' '{ print $3, "\t" , $2 , "\0"}' )
+done < <(cat -- "$bibfile" | sed -En -f $SCRIPT_DIR/../lib/file.sed | grep --color=auto -i ${filter} | awk -F '\t' '{ print $3, "\t" , $2 , "\0"}' )
 open_file=$(  printf '%s\n' "${titles[@]}"  | fzf )
 LEN=${#open_file}
 if [[ $LEN -eq 0 ]] # if file was not selected
